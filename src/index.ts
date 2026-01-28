@@ -21,6 +21,7 @@ const app = new Elysia()
       },
     }),
   )
+  .get("/", ({ redirect }) => redirect("/docs"))
   .use(healthcheckRoutes)
   .use(userRoutes)
   .listen(config.port);
