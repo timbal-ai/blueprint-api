@@ -7,7 +7,7 @@ import { authRoutes } from "./auth/routes";
 import { healthcheckRoutes } from "./routes/healthcheck";
 import { verifyRoutes } from "./routes/verify";
 
-const DOCS_PAGE_PATH = "./src/auth/pages/docs.html";
+const DOCS_PAGE_PATH = "./src/pages/docs.html";
 
 const app = new Elysia()
   .use(logixlysia())
