@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>API Documentation</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+      }
+
+      const token = getCookie('docs_session') || '';
+
+      Scalar.createApiReference('#app', {
+        url: '/api-spec/json',
+        theme: 'kepler',
+        forceDarkModeState: 'dark',
+        persistAuth: true,
+        authentication: {
+          preferredSecurityScheme: 'bearerAuth',
+          securitySchemes: {
+            bearerAuth: {
+              token: token
+            }
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

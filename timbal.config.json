@@ -1,0 +1,14 @@
+{
+  "auth": {
+    "provider": "supabase",
+    "config": {
+      "url": "https://udaozhkbziwmysehxbki.supabase.co",
+      "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkYW96aGtieml3bXlzZWh4YmtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwMTQyNTEsImV4cCI6MjA2MTU5MDI1MX0.XqoPEp9p1cFagyeGbIMNsLTG7vmyHS7BJzp20_a2GbM"
+    }
+  },
+  "timbal": {
+    "apiUrl": "https://api.timbal.ai",
+    "orgId": "1",
+    "projectId": "105"
+  }
+}
