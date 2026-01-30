@@ -10,7 +10,7 @@ const LOGIN_PAGE_PATH = "./src/auth/pages/login.html";
  * Flow: Supabase auth → Timbal validation → Set cookies
  */
 export const authRoutes = new Elysia({ prefix: "/docs" })
-  .get("/login", () => Bun.file(LOGIN_PAGE_PATH))
+  .get("/login", () => Bun.file(LOGIN_PAGE_PATH), { detail: { hide: true } })
 
   // Handle token from URL fragment (implicit OAuth flow)
   .post(
@@ -31,6 +31,7 @@ export const authRoutes = new Elysia({ prefix: "/docs" })
         access_token: t.String(),
         refresh_token: t.String(),
       }),
+      detail: { hide: true },
     }
   )
 
@@ -51,7 +52,7 @@ export const authRoutes = new Elysia({ prefix: "/docs" })
       status: 302,
       headers: { Location: data.url },
     });
-  })
+  }, { detail: { hide: true } })
 
   // Microsoft OAuth
   .get("/auth/microsoft", async () => {
@@ -71,7 +72,7 @@ export const authRoutes = new Elysia({ prefix: "/docs" })
       status: 302,
       headers: { Location: data.url },
     });
-  })
+  }, { detail: { hide: true } })
 
   // OAuth callback (PKCE code flow or implicit fragment flow)
   .get("/auth/callback", async ({ query, cookie }) => {
@@ -108,7 +109,7 @@ export const authRoutes = new Elysia({ prefix: "/docs" })
       status: 302,
       headers: { Location: "/docs" },
     });
-  })
+  }, { detail: { hide: true } })
 
   // Email/Password login
   .post(
@@ -147,6 +148,7 @@ export const authRoutes = new Elysia({ prefix: "/docs" })
         email: t.String(),
         password: t.String(),
       }),
+      detail: { hide: true },
     }
   )
 
@@ -158,4 +160,4 @@ export const authRoutes = new Elysia({ prefix: "/docs" })
       status: 302,
       headers: { Location: "/docs/login" },
     });
-  });
+  }, { detail: { hide: true } });

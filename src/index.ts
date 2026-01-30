@@ -5,7 +5,7 @@ import { config } from "./config";
 import { authMiddleware } from "./auth/middleware";
 import { authRoutes } from "./auth/routes";
 import { healthcheckRoutes } from "./routes/healthcheck";
-import { userRoutes } from "./routes/users";
+import { verifyRoutes } from "./routes/verify";
 
 const DOCS_PAGE_PATH = "./src/auth/pages/docs.html";
 
@@ -24,7 +24,7 @@ const app = new Elysia()
         },
         tags: [
           { name: "Health", description: "Health check endpoints" },
-          { name: "Users", description: "User management endpoints" },
+          { name: "Auth", description: "Authentication verification" },
         ],
         components: {
           securitySchemes: {
@@ -47,10 +47,10 @@ const app = new Elysia()
     })
   )
   // Custom docs page with auto-filled Bearer token
-  .get("/docs", () => Bun.file(DOCS_PAGE_PATH))
-  .get("/", ({ redirect }) => redirect("/docs"))
+  .get("/docs", () => Bun.file(DOCS_PAGE_PATH), { detail: { hide: true } })
+  .get("/", ({ redirect }) => redirect("/docs"), { detail: { hide: true } })
   .use(healthcheckRoutes)
-  .use(userRoutes)
+  .use(verifyRoutes)
   .listen(config.port);
 
 console.log(
