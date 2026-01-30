@@ -145,7 +145,7 @@ export const authMiddleware = new Elysia({ name: "auth" })
     },
   })
   .onBeforeHandle({ as: "global" }, ({ path, user, cookie }) => {
-    const publicPaths = ["/docs/login", "/docs/auth/", "/health"];
+    const publicPaths = ["/docs/login", "/docs/auth/", "/healthcheck"];
     if (path === "/" || publicPaths.some((p) => path.startsWith(p))) return;
 
     if (!user) {
