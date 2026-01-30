@@ -54,8 +54,8 @@ const app = new Elysia()
   .listen(config.port);
 
 console.log(
-  `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`
+  `Timbal API is running at http://${app.server?.hostname}:${app.server?.port}`
 );
 console.log(
-  `📚 API Documentation available at http://${app.server?.hostname}:${app.server?.port}/docs`
+  `API Documentation available at http://${app.server?.hostname}:${app.server?.port}/docs`
 );
