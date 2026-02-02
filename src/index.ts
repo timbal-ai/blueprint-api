@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import logixlysia from "logixlysia";
 import { config } from "./config";
@@ -10,6 +11,7 @@ import { verifyRoutes } from "./routes/verify";
 const DOCS_PAGE_PATH = "./src/pages/docs.html";
 
 const app = new Elysia()
+  .use(cors())
   .use(logixlysia())
   .use(authRoutes)
   .use(authMiddleware)
