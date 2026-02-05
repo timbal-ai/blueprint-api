@@ -44,8 +44,18 @@
         theme: 'deepSpace',
         forceDarkModeState: 'dark',
         persistAuth: true,
-        customCss: 'a[href="https://www.scalar.com"] { display: none !important; } button[data-v-8e55af28] { display: none !important; }',
+        customCss: 'a[href="https://www.scalar.com"] { display: none !important; }',
+        hideClientButton: true,
       });
+
+      // Hide Ask AI button
+      const hideAskAI = () => {
+        document.querySelectorAll('span, button').forEach(el => {
+          if (el.textContent?.trim() === 'Ask AI') el.style.display = 'none';
+        });
+      };
+      setTimeout(hideAskAI, 500);
+      new MutationObserver(hideAskAI).observe(document.body, { childList: true, subtree: true });
     </script>
   </body>
 </html>
