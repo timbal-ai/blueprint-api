@@ -45,11 +45,22 @@ export function clearAuthCookie(cookie: Record<string, any>) {
 }
 
 /**
- * Resolves authentication from cookie
+ * Resolves authentication from Authorization header (priority) or cookie
  */
 async function resolveAuth(
-  cookie: Record<string, any>
+  cookie: Record<string, any>,
+  headers: Headers
 ): Promise<{ user: AuthUser | null; accessToken: string | null }> {
+  // Check Authorization header first (allows overriding cookie auth)
+  const authHeader = headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const user = await validateWithTimbal(token);
+    if (user) return { user, accessToken: token };
+    return { user: null, accessToken: null }; // Invalid header token = fail (don't fall back to cookie)
+  }
+
+  // Fall back to cookie
   const accessToken = cookie.timbal_access_token?.value as string | undefined;
   if (accessToken) {
     const user = await validateWithTimbal(accessToken);
@@ -62,8 +73,8 @@ async function resolveAuth(
  * Auth middleware
  */
 export const authMiddleware = new Elysia({ name: "auth" })
-  .derive({ as: "global" }, async ({ cookie }) => {
-    return resolveAuth(cookie);
+  .derive({ as: "global" }, async ({ cookie, request }) => {
+    return resolveAuth(cookie, request.headers);
   })
   .macro({
     auth: {
