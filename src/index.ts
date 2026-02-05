@@ -34,21 +34,14 @@ const app = new Elysia()
               type: "http",
               scheme: "bearer",
               bearerFormat: "JWT",
-              description: "Your access token is auto-filled from your session cookie. Copy it for external use.",
-            },
-            apiKey: {
-              type: "apiKey",
-              in: "header",
-              name: "x-api-key",
-              description: "API key for machine-to-machine authentication",
+              description: "Your access token from Timbal auth.",
             },
           },
         },
-        security: [{ bearerAuth: [] }, { apiKey: [] }],
+        security: [{ bearerAuth: [] }],
       },
     })
   )
-  // Custom docs page with auto-filled Bearer token
   .get("/docs", () => Bun.file(DOCS_PAGE_PATH), { detail: { hide: true } })
   .get("/", ({ redirect }) => redirect("/docs"), { detail: { hide: true } })
   .use(healthcheckRoutes)

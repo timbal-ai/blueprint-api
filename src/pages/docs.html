@@ -5,18 +5,38 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <style>
+      .logout-btn {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #71717a;
+        background: transparent;
+        border: 1px solid #27272a;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        transition: all 0.15s;
+        z-index: 1000;
+      }
+      .logout-btn:hover {
+        color: #a1a1aa;
+        border-color: #3f3f46;
+        background: #18181b;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
+    <button class="logout-btn" onclick="logout()">Sign out</button>
     <script>
-      function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
+      function logout() {
+        localStorage.removeItem('refresh_token');
+        fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' })
+          .then(() => window.location.href = '/auth/login');
       }
-
-      const token = getCookie('docs_session') || '';
 
       Scalar.createApiReference('#app', {
         url: '/api-spec/json',
@@ -25,14 +45,6 @@
         forceDarkModeState: 'dark',
         persistAuth: true,
         customCss: 'a[href="https://www.scalar.com"] { display: none !important; } button[data-v-8e55af28] { display: none !important; }',
-        authentication: {
-          preferredSecurityScheme: 'bearerAuth',
-          securitySchemes: {
-            bearerAuth: {
-              token: token
-            }
-          }
-        }
       });
     </script>
   </body>

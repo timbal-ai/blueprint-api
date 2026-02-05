@@ -4,14 +4,9 @@
     <title>Sign In - Timbal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
+      * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
@@ -20,13 +15,11 @@
         background: #0a0a0a;
         padding: 1rem;
       }
-      
       .logo {
         margin-bottom: 1.5rem;
         height: 28px;
         width: auto;
       }
-      
       .card {
         background: #18181b;
         border-radius: 12px;
@@ -35,47 +28,44 @@
         max-width: 400px;
         border: 1px solid #27272a;
       }
-      
       .card-header {
         padding: 1.5rem 1.5rem 0;
         text-align: center;
       }
-      
       .card-title {
         font-size: 1.5rem;
         font-weight: 700;
         color: #fafafa;
         margin-bottom: 0.5rem;
       }
-      
       .card-description {
         color: #a1a1aa;
         font-size: 0.875rem;
       }
-      
       .card-content {
         padding: 1.5rem;
       }
-      
       .alert {
-        background: #450a0a;
-        border: 1px solid #991b1b;
-        color: #fca5a5;
         padding: 0.75rem 1rem;
         border-radius: 8px;
         font-size: 0.875rem;
         margin-bottom: 1rem;
         display: none;
       }
-      
-      .alert.show {
-        display: block;
+      .alert.error {
+        background: #450a0a;
+        border: 1px solid #991b1b;
+        color: #fca5a5;
       }
-      
+      .alert.success {
+        background: #052e16;
+        border: 1px solid #166534;
+        color: #86efac;
+      }
+      .alert.show { display: block; }
       .form-group {
         margin-bottom: 1rem;
       }
-      
       label {
         display: block;
         font-size: 0.875rem;
@@ -83,7 +73,6 @@
         color: #e4e4e7;
         margin-bottom: 0.5rem;
       }
-      
       input {
         width: 100%;
         padding: 0.625rem 0.875rem;
@@ -95,16 +84,11 @@
         transition: border-color 0.15s, box-shadow 0.15s;
         outline: none;
       }
-      
       input:focus {
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
       }
-      
-      input::placeholder {
-        color: #71717a;
-      }
-      
+      input::placeholder { color: #71717a; }
       .btn {
         width: 100%;
         padding: 0.625rem 1rem;
@@ -118,75 +102,53 @@
         justify-content: center;
         gap: 0.5rem;
         text-decoration: none;
+        border: none;
       }
-      
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
       .btn-primary {
         background: #fafafa;
         color: #18181b;
-        border: none;
       }
-      
-      .btn-primary:hover {
-        background: #e4e4e7;
-      }
-      
+      .btn-primary:hover:not(:disabled) { background: #e4e4e7; }
       .btn-outline {
         background: transparent;
         color: #e4e4e7;
         border: 1px solid #3f3f46;
       }
-      
-      .btn-outline:hover {
-        background: #27272a;
-      }
-      
+      .btn-outline:hover { background: #27272a; }
       .oauth-buttons {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
       }
-      
       .divider {
         display: flex;
         align-items: center;
         margin: 1.5rem 0;
       }
-      
-      .divider::before,
-      .divider::after {
+      .divider::before, .divider::after {
         content: "";
         flex: 1;
         height: 1px;
         background: #3f3f46;
       }
-      
       .divider span {
         padding: 0 1rem;
         color: #71717a;
         font-size: 0.75rem;
         text-transform: uppercase;
       }
-      
       .card-footer {
         padding: 0 1.5rem 1.5rem;
         text-align: center;
       }
-      
       .card-footer p {
         color: #71717a;
         font-size: 0.875rem;
       }
-      
-      .card-footer a {
-        color: #3b82f6;
-        text-decoration: none;
-        font-weight: 500;
-      }
-      
-      .card-footer a:hover {
-        text-decoration: underline;
-      }
-      
       .oauth-icon {
         width: 18px;
         height: 18px;
@@ -194,7 +156,6 @@
     </style>
   </head>
   <body>
-    <!-- Timbal Logo -->
     <svg class="logo" viewBox="0 0 1975.28 433.45" xmlns="http://www.w3.org/2000/svg">
       <g fill="#fff">
         <path d="M590.64,393.66v-207.41h-50.27v-53.97h50.27V50.79h64.55v81.48h50.8v53.97h-50.8v207.41h-64.55Z"/>
@@ -214,30 +175,18 @@
       </div>
       
       <div class="card-content">
-        <div id="error" class="alert"></div>
+        <div id="error" class="alert error"></div>
+        <div id="success" class="alert success"></div>
         
-        <form method="POST" action="/docs/login">
+        <!-- Magic Link Form -->
+        <form id="magic-link-form">
           <div class="form-group">
             <label for="email">Email</label>
-            <input 
-              id="email" 
-              name="email" 
-              type="email" 
-              placeholder="name@example.com" 
-              required 
-            />
+            <input id="email" name="email" type="email" placeholder="name@example.com" required />
           </div>
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input 
-              id="password" 
-              name="password" 
-              type="password" 
-              placeholder="••••••••" 
-              required 
-            />
-          </div>
-          <button type="submit" class="btn btn-primary">Sign in</button>
+          <button type="submit" class="btn btn-primary" id="magic-link-btn">
+            Send magic link
+          </button>
         </form>
         
         <div class="divider">
@@ -245,7 +194,14 @@
         </div>
         
         <div class="oauth-buttons">
-          <a href="/docs/auth/google" class="btn btn-outline">
+          <a href="/auth/github" class="btn btn-outline">
+            <svg class="oauth-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            Continue with GitHub
+          </a>
+          
+          <a href="/auth/google" class="btn btn-outline">
             <svg class="oauth-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
               <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
@@ -255,7 +211,7 @@
             Continue with Google
           </a>
           
-          <a href="/docs/auth/microsoft" class="btn btn-outline">
+          <a href="/auth/microsoft" class="btn btn-outline">
             <svg class="oauth-icon" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
               <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
               <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
@@ -274,44 +230,57 @@
 
     <script>
       const errorEl = document.getElementById('error');
+      const successEl = document.getElementById('success');
+      const form = document.getElementById('magic-link-form');
+      const submitBtn = document.getElementById('magic-link-btn');
+
+      // Show error from URL params
       const urlParams = new URLSearchParams(window.location.search);
       const error = urlParams.get('error');
-
-      // Handle OAuth fragment tokens first
-      if (window.location.hash) {
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        
-        if (accessToken && refreshToken) {
-          fetch('/docs/auth/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              access_token: accessToken,
-              refresh_token: refreshToken 
-            })
-          }).then(res => {
-            if (res.ok) {
-              window.location.href = '/docs';
-            } else {
-              errorEl.textContent = 'You do not have access to this project';
-              errorEl.classList.add('show');
-            }
-          }).catch(() => {
-            errorEl.textContent = 'Authentication failed';
-            errorEl.classList.add('show');
-          });
-        }
-      } else if (error) {
+      if (error) {
         const messages = {
-          'no_access': 'You do not have access to this project',
-          'invalid_credentials': 'Invalid email or password',
-          'auth_failed': 'Authentication failed'
+          'auth_failed': 'Authentication failed. Please try again.',
+          'no_access': 'You do not have access to this application.'
         };
         errorEl.textContent = messages[error] || 'Login failed';
         errorEl.classList.add('show');
       }
+
+      // Magic link form submission
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorEl.classList.remove('show');
+        successEl.classList.remove('show');
+        
+        const email = document.getElementById('email').value;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+
+        try {
+          const res = await fetch('/auth/magic-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+
+          const data = await res.json();
+          
+          if (res.ok) {
+            successEl.textContent = 'Check your email for the login link!';
+            successEl.classList.add('show');
+            form.reset();
+          } else {
+            errorEl.textContent = data.error || 'Failed to send magic link';
+            errorEl.classList.add('show');
+          }
+        } catch {
+          errorEl.textContent = 'Network error. Please try again.';
+          errorEl.classList.add('show');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send magic link';
+        }
+      });
     </script>
   </body>
 </html>

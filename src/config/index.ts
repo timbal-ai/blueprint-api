@@ -1,23 +1,3 @@
-import { join } from "path";
-
-interface TimbalConfig {
-  auth: {
-    provider: string;
-    config: {
-      url: string;
-      anonKey: string;
-    };
-  };
-  timbal: {
-    apiUrl: string;
-    orgId: string;
-    projectId: string;
-  };
-}
-
-const timbalConfigPath = join(import.meta.dir, "../../timbal.config.json");
-const timbalConfig: TimbalConfig = await Bun.file(timbalConfigPath).json();
-
 export const config = {
   port: Number(process.env.PORT) || 3000,
   env: process.env.NODE_ENV || "development",
@@ -27,13 +7,7 @@ export const config = {
     version: "1.0.0",
     description: "A production-ready Timbal API",
   },
-  supabase: {
-    url: timbalConfig.auth.config.url,
-    anonKey: timbalConfig.auth.config.anonKey,
-  },
-  timbal: {
-    apiUrl: timbalConfig.timbal.apiUrl,
-    orgId: timbalConfig.timbal.orgId,
-    projectId: timbalConfig.timbal.projectId,
+  auth: {
+    url: "https://api.timbal.ai",
   },
 } as const;
