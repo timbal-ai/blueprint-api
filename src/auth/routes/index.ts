@@ -5,6 +5,7 @@ import { validateWithTimbal, setAuthCookie, clearAuthCookie } from "../middlewar
 const TIMBAL_AUTH_URL = "https://api.timbal.ai";
 const LOGIN_PAGE_PATH = "./src/auth/pages/login.html";
 const CALLBACK_PAGE_PATH = "./src/auth/pages/callback.html";
+const LOGOS_DIR = "./src/auth/pages/logos";
 
 /**
  * Auth routes
@@ -12,6 +13,11 @@ const CALLBACK_PAGE_PATH = "./src/auth/pages/callback.html";
 export const authRoutes = new Elysia({ prefix: "/auth" })
   // Login page
   .get("/login", () => Bun.file(LOGIN_PAGE_PATH), { detail: { hide: true } })
+
+  // Logos static files
+  .get("/logos/:filename", ({ params }) => {
+    return Bun.file(`${LOGOS_DIR}/${params.filename}`);
+  }, { detail: { hide: true } })
 
   // OAuth redirect to Timbal
   .get(
