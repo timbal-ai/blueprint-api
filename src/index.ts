@@ -33,8 +33,7 @@ const app = new Elysia()
             bearerAuth: {
               type: "http",
               scheme: "bearer",
-              bearerFormat: "JWT",
-              description: "Your access token from Timbal auth.",
+              description: "Timbal access token or API key (t2_...)",
             },
           },
         },

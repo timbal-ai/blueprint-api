@@ -45,27 +45,30 @@ export function clearAuthCookie(cookie: Record<string, any>) {
 }
 
 /**
- * Resolves authentication from Authorization header (priority) or cookie
+ * Resolves authentication from Authorization header or cookie
+ * 
+ * Bearer header takes priority (no fallback to cookie if provided)
+ * If no header, falls back to cookie
  */
 async function resolveAuth(
   cookie: Record<string, any>,
   headers: Headers
 ): Promise<{ user: AuthUser | null; accessToken: string | null }> {
-  // Check Authorization header first (allows overriding cookie auth)
+  // 1. Bearer Token (exclusive - no fallback)
   const authHeader = headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     const user = await validateWithTimbal(token);
-    if (user) return { user, accessToken: token };
-    return { user: null, accessToken: null }; // Invalid header token = fail (don't fall back to cookie)
+    return { user, accessToken: token };
   }
 
-  // Fall back to cookie
+  // 2. No header - fall back to cookie
   const accessToken = cookie.timbal_access_token?.value as string | undefined;
   if (accessToken) {
     const user = await validateWithTimbal(accessToken);
     if (user) return { user, accessToken };
   }
+
   return { user: null, accessToken: null };
 }
 
