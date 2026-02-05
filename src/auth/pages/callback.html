@@ -30,48 +30,30 @@
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
-      .error {
-        color: #fca5a5;
-        background: #450a0a;
-        border: 1px solid #991b1b;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-top: 1rem;
-        display: none;
-      }
-      .error.show { display: block; }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="spinner"></div>
-      <p id="status">Completing authentication...</p>
-      <div id="error" class="error"></div>
+      <p>Completing authentication...</p>
     </div>
 
     <script>
-      const statusEl = document.getElementById('status');
-      const errorEl = document.getElementById('error');
-
-      function showError(message) {
-        document.querySelector('.spinner').style.display = 'none';
-        statusEl.textContent = 'Authentication failed';
-        errorEl.textContent = message;
-        errorEl.classList.add('show');
-        setTimeout(() => window.location.replace('/auth/login?error=auth_failed'), 3000);
+      function showError() {
+        window.location.replace('/auth/login?error=auth_failed');
       }
 
       // Extract tokens from URL hash fragment
       const hash = window.location.hash.substring(1);
       if (!hash) {
-        showError('No authentication data received');
+        showError();
       } else {
         const params = new URLSearchParams(hash);
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
 
         if (!access_token || !refresh_token) {
-          showError('Missing tokens in response');
+          showError();
         } else {
           // Store refresh token in localStorage (never in cookies)
           localStorage.setItem('refresh_token', refresh_token);
@@ -87,12 +69,10 @@
             if (res.ok) {
               window.location.replace('/docs');
             } else {
-              return res.json().then(data => {
-                throw new Error(data.error || 'Authentication failed');
-              });
+              showError();
             }
           })
-          .catch(err => showError(err.message));
+          .catch(() => showError());
         }
       }
     </script>

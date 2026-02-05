@@ -2,18 +2,19 @@ import { Elysia } from "elysia";
 import { config } from "../../config";
 import type { AuthUser } from "../types";
 
-const TIMBAL_AUTH_URL = "https://api.timbal.ai";
-
 /**
- * Validates token with Timbal's /me endpoint
+ * Validates token with Timbal API - checks both auth AND project access
  */
 export async function validateWithTimbal(token: string): Promise<AuthUser | null> {
+  const url = `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}`;
+
   try {
-    const response = await fetch(`${TIMBAL_AUTH_URL}/me`, {
+    const response = await fetch(url, {
+      method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) return null;
-    return await response.json();
+    return { id: "timbal-authenticated" };
   } catch {
     return null;
   }
