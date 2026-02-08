@@ -1,5 +1,3 @@
-import timbalConfig from "../../timbal.config.json";
-
 export const config = {
   port: Number(process.env.PORT) || 3000,
   env: process.env.NODE_ENV || "development",
@@ -10,11 +8,11 @@ export const config = {
     description: "A production-ready Timbal API",
   },
   auth: {
-    url: "https://api.timbal.ai",
+    url: `https://${process.env.TIMBAL_API_HOST || "api.timbal.ai"}`,
   },
   timbal: {
-    apiUrl: timbalConfig.timbal.apiUrl,
-    orgId: timbalConfig.timbal.orgId,
-    projectId: timbalConfig.timbal.projectId,
+    apiUrl: `https://${process.env.TIMBAL_API_HOST || "api.timbal.ai"}`,
+    orgId: process.env.TIMBAL_ORG_ID || "",
+    projectId: process.env.TIMBAL_PROJECT_ID || "",
   },
 } as const;
