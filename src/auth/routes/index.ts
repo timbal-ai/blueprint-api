@@ -22,13 +22,14 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   // OAuth redirect to Timbal
   .get(
     "/:provider",
-    ({ params, redirect }) => {
+    ({ params, redirect, request }) => {
       const { provider } = params;
       const validProviders = ["github", "google", "microsoft"];
       if (!validProviders.includes(provider)) {
         return new Response("Invalid provider", { status: 400 });
       }
-      const callbackUrl = `${config.baseUrl}/auth/callback`;
+      const origin = new URL(request.url).origin;
+      const callbackUrl = `${origin}/auth/callback`;
       const url = `${TIMBAL_AUTH_URL}/oauth/authorize?provider=${provider}&redirect_uri=${encodeURIComponent(callbackUrl)}`;
       return redirect(url);
     },
@@ -69,9 +70,10 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   // Magic link request
   .post(
     "/magic-link",
-    async ({ body }) => {
+    async ({ body, request }) => {
       const { email } = body;
-      const callbackUrl = `${config.baseUrl}/auth/callback`;
+      const origin = new URL(request.url).origin;
+      const callbackUrl = `${origin}/auth/callback`;
 
       const response = await fetch(`${TIMBAL_AUTH_URL}/auth/magic-link`, {
         method: "POST",
