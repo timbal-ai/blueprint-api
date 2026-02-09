@@ -8,6 +8,29 @@ const CALLBACK_PAGE_PATH = "./src/auth/pages/callback.html";
 const LOGOS_DIR = "./src/auth/pages/logos";
 
 /**
+ * Get the origin from the request, respecting proxy headers
+ * Only allows http for localhost/127.0.0.1, otherwise enforces https
+ */
+function getOrigin(request: Request): string {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const forwardedHost = request.headers.get("x-forwarded-host");
+
+  const url = new URL(request.url);
+  const protocol = forwardedProto || url.protocol.replace(":", "");
+  const host = forwardedHost || url.host;
+
+  // Extract hostname without port
+  const hostname = host.split(":")[0];
+
+  // Only allow http for localhost and 127.0.0.1
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+  const finalProtocol =
+    protocol === "http" && !isLocalhost ? "https" : protocol;
+
+  return `${finalProtocol}://${host}`;
+}
+
+/**
  * Auth routes
  */
 export const authRoutes = new Elysia({ prefix: "/auth" })
@@ -28,7 +51,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       if (!validProviders.includes(provider)) {
         return new Response("Invalid provider", { status: 400 });
       }
-      const origin = new URL(request.url).origin;
+      const origin = getOrigin(request);
       const callbackUrl = `${origin}/auth/callback`;
       const url = `${TIMBAL_AUTH_URL}/oauth/authorize?provider=${provider}&redirect_uri=${encodeURIComponent(callbackUrl)}`;
       return redirect(url);
@@ -72,7 +95,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     "/magic-link",
     async ({ body, request }) => {
       const { email } = body;
-      const origin = new URL(request.url).origin;
+      const origin = getOrigin(request);
       const callbackUrl = `${origin}/auth/callback`;
 
       const response = await fetch(`${TIMBAL_AUTH_URL}/auth/magic-link`, {
