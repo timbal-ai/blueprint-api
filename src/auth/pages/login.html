@@ -407,55 +407,12 @@
         .alert-error { background: rgba(69, 10, 10, 0.4); border: 1px solid #7f1d1d; color: #fca5a5; }
         .alert-info { background: rgba(23, 37, 84, 0.4); border: 1px solid #1e3a8a; color: #93c5fd; }
 
-        /* --- Terms Checkbox --- */
+        /* --- Terms Text --- */
         .terms-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
             margin-top: 0.25rem;
-        }
-
-        .terms-checkbox {
-            appearance: none;
-            -webkit-appearance: none;
-            width: 13px;
-            height: 13px;
-            min-width: 13px;
-            min-height: 13px;
-            max-width: 13px;
-            max-height: 13px;
-            border: 1px solid #3f3f46;
-            border-radius: 3px;
-            background: transparent;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            position: relative;
-            flex-shrink: 0;
-            box-sizing: border-box;
-            padding: 0;
-            margin: 0;
-        }
-
-        .terms-checkbox:hover {
-            border-color: #52525b;
-        }
-
-        .terms-checkbox:checked {
-            background: #166534;
-            border-color: #166534;
-        }
-
-        .terms-checkbox:checked::after {
-            content: "";
-            position: absolute;
-            left: 3px;
-            top: 0px;
-            width: 3px;
-            height: 6px;
-            border: solid #4ade80;
-            border-width: 0 1.5px 1.5px 0;
-            transform: rotate(45deg);
         }
 
         .terms-text {
@@ -549,10 +506,9 @@
                 </div>
 
                 <div class="terms-container">
-                    <input type="checkbox" id="terms-checkbox" class="terms-checkbox" required>
-                    <label for="terms-checkbox" class="terms-text">
-                        I accept the <a href="https://app.timbal.ai/legal/terms-use/" target="_blank">Terms</a> and <a href="https://app.timbal.ai/legal/privacy-policy/" target="_blank">Privacy Policy</a>
-                    </label>
+                    <span class="terms-text">
+                        By using Timbal, you accept the <a href="https://app.timbal.ai/legal/terms-use/" target="_blank">Terms</a> and <a href="https://app.timbal.ai/legal/privacy-policy/" target="_blank">Privacy Policy</a>
+                    </span>
                 </div>
             </div>
         </div>
