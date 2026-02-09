@@ -39,21 +39,22 @@
     </div>
 
     <script>
-      function showError() {
-        window.location.replace('/auth/login?error=auth_failed');
+      function showError(code) {
+        localStorage.removeItem('refresh_token');
+        window.location.replace('/auth/login?error=' + (code || 'auth_failed'));
       }
 
       // Extract tokens from URL hash fragment
       const hash = window.location.hash.substring(1);
       if (!hash) {
-        showError();
+        showError('no_tokens');
       } else {
         const params = new URLSearchParams(hash);
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
 
         if (!access_token || !refresh_token) {
-          showError();
+          showError('no_tokens');
         } else {
           // Store refresh token in localStorage (never in cookies)
           localStorage.setItem('refresh_token', refresh_token);
@@ -65,14 +66,16 @@
             credentials: 'same-origin',
             body: JSON.stringify({ access_token })
           })
-          .then(res => {
+          .then(async res => {
             if (res.ok) {
               window.location.replace('/docs');
+            } else if (res.status === 401) {
+              showError('invalid_token');
             } else {
-              showError();
+              showError('auth_failed');
             }
           })
-          .catch(() => showError());
+          .catch(() => showError('auth_failed'));
         }
       }
     </script>
