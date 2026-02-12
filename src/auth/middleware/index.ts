@@ -5,7 +5,9 @@ import type { AuthUser } from "../types";
 /**
  * Validates token with Timbal API - checks both auth AND project access
  */
-export async function validateWithTimbal(token: string): Promise<AuthUser | null> {
+export async function validateWithTimbal(
+  token: string,
+): Promise<AuthUser | null> {
   const url = `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}`;
 
   try {
@@ -25,7 +27,7 @@ export async function validateWithTimbal(token: string): Promise<AuthUser | null
  */
 export function setAuthCookie(
   cookie: Record<string, any>,
-  accessToken: string
+  accessToken: string,
 ) {
   cookie.timbal_access_token.set({
     value: accessToken,
@@ -46,13 +48,13 @@ export function clearAuthCookie(cookie: Record<string, any>) {
 
 /**
  * Resolves authentication from Authorization header or cookie
- * 
+ *
  * Bearer header takes priority (no fallback to cookie if provided)
  * If no header, falls back to cookie
  */
 async function resolveAuth(
   cookie: Record<string, any>,
-  headers: Headers
+  headers: Headers,
 ): Promise<{ user: AuthUser | null; accessToken: string | null }> {
   // 1. Bearer Token (exclusive - no fallback)
   const authHeader = headers.get("authorization");
@@ -88,15 +90,25 @@ export const authMiddleware = new Elysia({ name: "auth" })
     },
   })
   .onBeforeHandle({ as: "global" }, ({ path, user, cookie }) => {
+    const normalizedPath = path.startsWith("/api/")
+      ? path.slice(4)
+      : path === "/api"
+        ? "/"
+        : path;
     const publicPaths = ["/auth/", "/healthcheck"];
-    if (path === "/" || publicPaths.some((p) => path.startsWith(p))) return;
+    if (
+      normalizedPath === "/" ||
+      publicPaths.some((p) => normalizedPath.startsWith(p))
+    )
+      return;
 
     if (!user) {
-      if (path.startsWith("/docs")) {
+      if (normalizedPath.startsWith("/docs")) {
         clearAuthCookie(cookie);
+        const prefix = path.startsWith("/api") ? "/api" : "";
         return new Response(null, {
           status: 302,
-          headers: { Location: "/auth/login" },
+          headers: { Location: `${prefix}/auth/login` },
         });
       }
       return new Response(JSON.stringify({ error: "Unauthorized" }), {

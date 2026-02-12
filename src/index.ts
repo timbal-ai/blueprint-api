@@ -11,9 +11,7 @@ import { workforceRoutes } from "./routes/workforce";
 
 const DOCS_PAGE_PATH = "./src/pages/docs.html";
 
-const app = new Elysia()
-  .use(cors())
-  .use(logixlysia())
+const coreApp = new Elysia()
   .use(authRoutes)
   .use(authMiddleware)
   .use(
@@ -44,12 +42,39 @@ const app = new Elysia()
       },
     }),
   )
-  .get("/docs", () => Bun.file(DOCS_PAGE_PATH), { detail: { hide: true } })
-  .get("/favicon.png", ({ redirect }) => redirect("https://content.timbal.ai/assets/favicon.png"), { detail: { hide: true } })
-  .get("/", ({ redirect }) => redirect("/docs"), { detail: { hide: true } })
+  .get(
+    "/docs",
+    async ({ path }) => {
+      const prefix = path.startsWith("/api") ? "/api" : "";
+      const html = await Bun.file(DOCS_PAGE_PATH).text();
+      return new Response(html.replaceAll("{{PREFIX}}", prefix), {
+        headers: { "Content-Type": "text/html" },
+      });
+    },
+    { detail: { hide: true } },
+  )
+  .get(
+    "/favicon.png",
+    ({ redirect }) => redirect("https://content.timbal.ai/assets/favicon.png"),
+    { detail: { hide: true } },
+  )
+  .get(
+    "/",
+    ({ redirect, path }) => {
+      const prefix = path.startsWith("/api") ? "/api" : "";
+      return redirect(`${prefix}/docs`);
+    },
+    { detail: { hide: true } },
+  )
   .use(healthcheckRoutes)
   .use(verifyRoutes)
-  .use(workforceRoutes)
+  .use(workforceRoutes);
+
+const app = new Elysia()
+  .use(cors())
+  .use(logixlysia())
+  .use(coreApp)
+  .group("/api", (app) => app.use(coreApp))
   .listen(config.port);
 
 console.log(

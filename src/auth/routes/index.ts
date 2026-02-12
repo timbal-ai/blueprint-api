@@ -1,6 +1,10 @@
 import { Elysia, t } from "elysia";
 import { config } from "../../config";
-import { validateWithTimbal, setAuthCookie, clearAuthCookie } from "../middleware";
+import {
+  validateWithTimbal,
+  setAuthCookie,
+  clearAuthCookie,
+} from "../middleware";
 
 const TIMBAL_AUTH_URL = "https://api.timbal.ai";
 const LOGIN_PAGE_PATH = "./src/auth/pages/login.html";
@@ -35,35 +39,60 @@ function getOrigin(request: Request): string {
  */
 export const authRoutes = new Elysia({ prefix: "/auth" })
   // Login page
-  .get("/login", () => Bun.file(LOGIN_PAGE_PATH), { detail: { hide: true } })
+  .get(
+    "/login",
+    async ({ path }) => {
+      const prefix = path.startsWith("/api") ? "/api" : "";
+      const html = await Bun.file(LOGIN_PAGE_PATH).text();
+      return new Response(html.replaceAll("{{PREFIX}}", prefix), {
+        headers: { "Content-Type": "text/html" },
+      });
+    },
+    { detail: { hide: true } },
+  )
 
   // Logos static files
-  .get("/logos/:filename", ({ params }) => {
-    return Bun.file(`${LOGOS_DIR}/${params.filename}`);
-  }, { detail: { hide: true } })
+  .get(
+    "/logos/:filename",
+    ({ params }) => {
+      return Bun.file(`${LOGOS_DIR}/${params.filename}`);
+    },
+    { detail: { hide: true } },
+  )
 
   // OAuth redirect to Timbal
   .get(
     "/:provider",
-    ({ params, redirect, request }) => {
+    ({ params, redirect, request, path }) => {
       const { provider } = params;
       const validProviders = ["github", "google", "microsoft"];
       if (!validProviders.includes(provider)) {
         return new Response("Invalid provider", { status: 400 });
       }
       const origin = getOrigin(request);
-      const callbackUrl = `${origin}/auth/callback`;
+      const prefix = path.startsWith("/api") ? "/api" : "";
+      const callbackUrl = `${origin}${prefix}/auth/callback`;
       const url = `${TIMBAL_AUTH_URL}/oauth/authorize?provider=${provider}&redirect_uri=${encodeURIComponent(callbackUrl)}`;
       return redirect(url);
     },
     {
       params: t.Object({ provider: t.String() }),
       detail: { hide: true },
-    }
+    },
   )
 
   // Callback page (extracts hash tokens via JS)
-  .get("/callback", () => Bun.file(CALLBACK_PAGE_PATH), { detail: { hide: true } })
+  .get(
+    "/callback",
+    async ({ path }) => {
+      const prefix = path.startsWith("/api") ? "/api" : "";
+      const html = await Bun.file(CALLBACK_PAGE_PATH).text();
+      return new Response(html.replaceAll("{{PREFIX}}", prefix), {
+        headers: { "Content-Type": "text/html" },
+      });
+    },
+    { detail: { hide: true } },
+  )
 
   // Set token (receives access token from callback JS, refresh token stays in localStorage)
   .post(
@@ -87,16 +116,17 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         access_token: t.String(),
       }),
       detail: { hide: true },
-    }
+    },
   )
 
   // Magic link request
   .post(
     "/magic-link",
-    async ({ body, request }) => {
+    async ({ body, request, path }) => {
       const { email } = body;
       const origin = getOrigin(request);
-      const callbackUrl = `${origin}/auth/callback`;
+      const prefix = path.startsWith("/api") ? "/api" : "";
+      const callbackUrl = `${origin}${prefix}/auth/callback`;
 
       const response = await fetch(`${TIMBAL_AUTH_URL}/auth/magic-link`, {
         method: "POST",
@@ -106,10 +136,13 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
 
       if (!response.ok) {
         const error = await response.text();
-        return new Response(JSON.stringify({ error: error || "Failed to send magic link" }), {
-          status: response.status,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: error || "Failed to send magic link" }),
+          {
+            status: response.status,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
       }
 
       return { success: true, message: "Check your email for the login link" };
@@ -117,7 +150,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     {
       body: t.Object({ email: t.String() }),
       detail: { hide: true },
-    }
+    },
   )
 
   // Refresh token (receives refresh_token from body - stored in client localStorage)
@@ -155,36 +188,45 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     {
       body: t.Object({ refresh_token: t.String() }),
       detail: { hide: true },
-    }
+    },
   )
 
   // Logout
-  .post("/logout", ({ cookie }) => {
-    clearAuthCookie(cookie);
-    return new Response(null, {
-      status: 302,
-      headers: { Location: "/auth/login" },
-    });
-  }, { detail: { hide: true } })
+  .post(
+    "/logout",
+    ({ cookie, path }) => {
+      clearAuthCookie(cookie);
+      const prefix = path.startsWith("/api") ? "/api" : "";
+      return new Response(null, {
+        status: 302,
+        headers: { Location: `${prefix}/auth/login` },
+      });
+    },
+    { detail: { hide: true } },
+  )
 
   // Get current user
-  .get("/me", async ({ cookie }) => {
-    const token = cookie.timbal_access_token?.value as string | undefined;
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+  .get(
+    "/me",
+    async ({ cookie }) => {
+      const token = cookie.timbal_access_token?.value as string | undefined;
+      if (!token) {
+        return new Response(JSON.stringify({ error: "Not authenticated" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
-    const user = await validateWithTimbal(token);
-    if (!user) {
-      clearAuthCookie(cookie);
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+      const user = await validateWithTimbal(token);
+      if (!user) {
+        clearAuthCookie(cookie);
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
-    return user;
-  }, { detail: { hide: true } });
+      return user;
+    },
+    { detail: { hide: true } },
+  );
