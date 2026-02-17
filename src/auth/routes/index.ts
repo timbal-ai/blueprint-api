@@ -6,7 +6,7 @@ import {
   clearAuthCookie,
 } from "../middleware";
 
-const TIMBAL_AUTH_URL = "https://api.timbal.ai";
+const TIMBAL_AUTH_URL = config.timbal.apiUrl;
 const LOGIN_PAGE_PATH = "./src/auth/pages/login.html";
 const CALLBACK_PAGE_PATH = "./src/auth/pages/callback.html";
 const LOGOS_DIR = "./src/auth/pages/logos";

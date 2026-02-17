@@ -6,9 +6,6 @@ export const config = {
     version: "1.0.0",
     description: "A production-ready Timbal API",
   },
-  auth: {
-    url: `https://${process.env.TIMBAL_API_HOST || "api.timbal.ai"}`,
-  },
   timbal: {
     apiUrl: `https://${process.env.TIMBAL_API_HOST || "api.timbal.ai"}`,
     orgId: process.env.TIMBAL_ORG_ID || "",
