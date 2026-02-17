@@ -38,9 +38,7 @@ async function resolveDeployment(id: string, token: string): Promise<any> {
   }
 }
 
-async function listWorkforces(
-  token: string,
-): Promise<{ id: string; name: string }[]> {
+async function listWorkforces(token: string): Promise<{ id: string }[]> {
   const url = new URL(
     `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
   );
@@ -58,14 +56,13 @@ async function listWorkforces(
     const deployments = data?.deployments ?? [];
 
     const seen = new Set<string>();
-    const results: { id: string; name: string }[] = [];
+    const results: { id: string }[] = [];
 
     for (const d of deployments) {
       const id = d.target?.manifest_id;
-      const name = id;
       if (id && !seen.has(id)) {
         seen.add(id);
-        results.push({ id, name });
+        results.push({ id });
       }
     }
 
