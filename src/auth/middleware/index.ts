@@ -49,16 +49,23 @@ export function clearAuthCookie(cookie: Record<string, any>) {
   cookie.timbal_access_token?.remove();
 }
 
+const isLocalDev = !config.timbal.projectId;
+
 /**
  * Resolves authentication from Authorization header or cookie
  *
  * Bearer header takes priority (no fallback to cookie if provided)
  * If no header, falls back to cookie
+ * If TIMBAL_PROJECT_ID is not set, authentication is bypassed (local dev)
  */
 async function resolveAuth(
   cookie: Record<string, any>,
   headers: Headers,
 ): Promise<{ user: AuthUser | null; accessToken: string | null }> {
+  if (isLocalDev) {
+    return { user: { id: "local-dev" }, accessToken: null };
+  }
+
   // 1. Bearer Token (exclusive - no fallback)
   const authHeader = headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
@@ -93,6 +100,8 @@ export const authMiddleware = new Elysia({ name: "auth" })
     },
   })
   .onBeforeHandle({ as: "global" }, ({ path, user, cookie }) => {
+    if (isLocalDev) return;
+
     const normalizedPath = path.startsWith("/api/")
       ? path.slice(4)
       : path === "/api"

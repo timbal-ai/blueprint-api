@@ -35,7 +35,7 @@
     </head>
     <body>
         <div id="app"></div>
-        <button class="logout-btn" onclick="logout()">Sign out</button>
+        <button class="logout-btn" id="logout-btn" onclick="logout()">Sign out</button>
         <script>
             function logout() {
                 localStorage.removeItem("refresh_token");
@@ -56,6 +56,11 @@
                 hideClientButton: true,
                 servers: [{ url: window.location.origin + "{{PREFIX}}" }],
             });
+
+            // Hide sign out button on localhost
+            if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+                document.getElementById("logout-btn").style.display = "none";
+            }
 
             // Hide Ask AI button
             const hideAskAI = () => {
