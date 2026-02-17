@@ -15,7 +15,10 @@ export async function validateWithTimbal(
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.log("validateWithTimbal:", response.status, await response.clone().text());
+      return null;
+    }
     return { id: "timbal-authenticated" };
   } catch {
     return null;

@@ -41,6 +41,46 @@ async function resolveDeployment(id: string, token: string): Promise<any> {
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   // Elysia deduplicates named plugins — this is for type inference only
   .use(authMiddleware)
+  .get(
+    "/",
+    async ({ accessToken, status }) => {
+      const url = new URL(
+        `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
+      );
+      url.searchParams.set("status", "running");
+      url.searchParams.set(
+        "project_env_id",
+        process.env.TIMBAL_PROJECT_ENV_ID!,
+      );
+
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!res.ok) return status(res.status as any);
+
+        const data = await res.json();
+        const deployments = data?.deployments ?? [];
+
+        return deployments.map((d: any) => ({
+          id: d.manifest_id,
+          name: d.manifest_name ?? d.target?.name ?? null,
+        }));
+      } catch (err) {
+        console.error(err);
+        return status(502);
+      }
+    },
+    {
+      detail: {
+        summary: "List all workforce components",
+        description:
+          "Returns all running workforce components with their IDs and names",
+        tags: ["Workforce"],
+      },
+    },
+  )
   .post(
     "/:id",
     async ({ params, body, accessToken, status, set }) => {
