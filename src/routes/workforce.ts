@@ -38,45 +38,57 @@ async function resolveDeployment(id: string, token: string): Promise<any> {
   }
 }
 
+async function listWorkforces(
+  token: string,
+): Promise<{ id: string; name: string }[]> {
+  const url = new URL(
+    `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
+  );
+  url.searchParams.set("status", "running");
+  url.searchParams.set("project_env_id", process.env.TIMBAL_PROJECT_ENV_ID!);
+
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const deployments = data?.deployments ?? [];
+
+    const seen = new Set<string>();
+    const results: { id: string; name: string }[] = [];
+
+    for (const d of deployments) {
+      const id = d.target?.manifest_id;
+      const name = id;
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        results.push({ id, name });
+      }
+    }
+
+    return results;
+  } catch (err) {
+    console.error("Failed to list workforces:", err);
+    return [];
+  }
+}
+
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   // Elysia deduplicates named plugins — this is for type inference only
   .use(authMiddleware)
   .get(
     "/",
-    async ({ accessToken, status }) => {
-      const url = new URL(
-        `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
-      );
-      url.searchParams.set("status", "running");
-      url.searchParams.set(
-        "project_env_id",
-        process.env.TIMBAL_PROJECT_ENV_ID!,
-      );
-
-      try {
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (!res.ok) return status(res.status as any);
-
-        const data = await res.json();
-        const deployments = data?.deployments ?? [];
-
-        return deployments.map((d: any) => ({
-          id: d.manifest_id,
-          name: d.manifest_name ?? d.target?.name ?? null,
-        }));
-      } catch (err) {
-        console.error(err);
-        return status(502);
-      }
+    async ({ accessToken }) => {
+      return await listWorkforces(accessToken!);
     },
     {
       detail: {
-        summary: "List all workforce components",
+        summary: "List all workforces",
         description:
-          "Returns all running workforce components with their IDs and names",
+          "Returns the name and ID of every running workforce component",
         tags: ["Workforce"],
       },
     },
