@@ -1,3 +1,5 @@
+import { readdir, readFile } from "fs/promises";
+import { resolve } from "path";
 import { Elysia, t } from "elysia";
 import { config } from "../config";
 import { authMiddleware } from "../auth/middleware";
@@ -73,12 +75,37 @@ async function listWorkforces(token: string): Promise<{ id: string }[]> {
   }
 }
 
+async function listWorkforcesFromManifests(): Promise<{ id: string }[]> {
+  const workforceDir = resolve(import.meta.dir, "../../workforce");
+  const entries = await readdir(workforceDir, { withFileTypes: true });
+  const results: { id: string }[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    try {
+      const yaml = await readFile(
+        resolve(workforceDir, entry.name, "timbal.yaml"),
+        "utf-8",
+      );
+      const match = yaml.match(/_id:\s*"([^"]+)"/);
+      if (match) results.push({ id: match[1] });
+    } catch {
+      // no timbal.yaml in this directory — skip
+    }
+  }
+
+  return results;
+}
+
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   // Elysia deduplicates named plugins — this is for type inference only
   .use(authMiddleware)
   .get(
     "/",
     async ({ accessToken }) => {
+      if (!process.env.TIMBAL_PROJECT_ENV_ID) {
+        return await listWorkforcesFromManifests();
+      }
       return await listWorkforces(accessToken!);
     },
     {
