@@ -162,16 +162,18 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
       }
 
       const payload = body ?? {};
-      if (!payload.context) {
-        payload.context = {};
+      if (!isLocal) {
+        if (!payload.context) {
+          payload.context = {};
+        }
+        payload.context.platform_config = {
+          host: process.env.TIMBAL_API_HOST,
+          auth: {
+            type: "bearer",
+            token: accessToken,
+          },
+        };
       }
-      payload.context.platform_config = {
-        host: process.env.TIMBAL_API_HOST,
-        auth: {
-          type: "bearer",
-          token: accessToken,
-        },
-      };
 
       try {
         const res = await fetch(url, {
@@ -216,16 +218,18 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
       }
 
       const payload = body ?? {};
-      if (!payload.context) {
-        payload.context = {};
+      if (!isLocal) {
+        if (!payload.context) {
+          payload.context = {};
+        }
+        payload.context.platform_config = {
+          host: process.env.TIMBAL_API_HOST,
+          auth: {
+            type: "bearer",
+            token: accessToken,
+          },
+        };
       }
-      payload.context.platform_config = {
-        host: process.env.TIMBAL_API_HOST,
-        auth: {
-          type: "bearer",
-          token: accessToken,
-        },
-      };
 
       try {
         const res = await fetch(url, {
