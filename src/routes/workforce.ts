@@ -75,26 +75,54 @@ async function listWorkforces(token: string): Promise<{ id: string }[]> {
   }
 }
 
+const WORKFORCE_DIR = resolve(import.meta.dir, "../../../workforce");
+
 async function listWorkforcesFromManifests(): Promise<{ id: string }[]> {
-  const workforceDir = resolve(import.meta.dir, "../../../workforce");
-  const entries = await readdir(workforceDir, { withFileTypes: true });
+  const entries = await readdir(WORKFORCE_DIR, { withFileTypes: true });
   const results: { id: string }[] = [];
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     try {
       const yaml = await readFile(
-        resolve(workforceDir, entry.name, "timbal.yaml"),
+        resolve(WORKFORCE_DIR, entry.name, "timbal.yaml"),
         "utf-8",
       );
       const match = yaml.match(/_id:\s*"([^"]+)"/);
       if (match) results.push({ id: match[1] });
     } catch {
-      // no timbal.yaml in this directory — skip
+      // no timbal.yaml — skip
     }
   }
 
   return results;
+}
+
+async function resolveLocalDeployment(
+  manifestId: string,
+): Promise<string | null> {
+  const entries = await readdir(WORKFORCE_DIR, { withFileTypes: true });
+  const dirs = entries
+    .filter((e) => e.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const basePort = Number(process.env.WORKFORCE_LOCAL_BASE_PORT) || 4455;
+
+  for (let i = 0; i < dirs.length; i++) {
+    try {
+      const yaml = await readFile(
+        resolve(WORKFORCE_DIR, dirs[i].name, "timbal.yaml"),
+        "utf-8",
+      );
+      const match = yaml.match(/_id:\s*"([^"]+)"/);
+      if (match?.[1] === manifestId) {
+        return `http://localhost:${basePort + i}`;
+      }
+    } catch {
+      // no timbal.yaml — skip
+    }
+  }
+
+  return null;
 }
 
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
@@ -120,27 +148,34 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .post(
     "/:id",
     async ({ params, body, accessToken, status, set }) => {
-      const deployment = await resolveDeployment(params.id, accessToken!);
+      const isLocal = !process.env.TIMBAL_PROJECT_ENV_ID;
+      let url: string;
 
-      if (!deployment) {
-        return status(503);
+      if (isLocal) {
+        const base = await resolveLocalDeployment(params.id);
+        if (!base) return status(503);
+        url = `${base}/run`;
+      } else {
+        const deployment = await resolveDeployment(params.id, accessToken!);
+        if (!deployment) return status(503);
+        url = `https://${deployment.domain}/run`;
       }
 
       const payload = body ?? {};
-      payload.context = {
-        platform_config: {
-          host: process.env.TIMBAL_API_HOST,
-          auth: {
-            type: "bearer",
-            token: accessToken,
+      if (!isLocal) {
+        payload.context = {
+          platform_config: {
+            host: process.env.TIMBAL_API_HOST,
+            auth: {
+              type: "bearer",
+              token: accessToken,
+            },
+            subject: {
+              org_id: config.timbal.orgId,
+            },
           },
-          subject: {
-            org_id: config.timbal.orgId,
-            app_id: deployment.target?.id.toString(),
-          },
-        },
-      };
-      const url = `https://${deployment.domain}/run`;
+        };
+      }
 
       try {
         const res = await fetch(url, {
@@ -171,27 +206,34 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .post(
     "/:id/stream",
     async ({ params, body, accessToken, status, set }) => {
-      const deployment = await resolveDeployment(params.id, accessToken!);
+      const isLocal = !process.env.TIMBAL_PROJECT_ENV_ID;
+      let url: string;
 
-      if (!deployment) {
-        return status(503);
+      if (isLocal) {
+        const base = await resolveLocalDeployment(params.id);
+        if (!base) return status(503);
+        url = `${base}/stream`;
+      } else {
+        const deployment = await resolveDeployment(params.id, accessToken!);
+        if (!deployment) return status(503);
+        url = `https://${deployment.domain}/stream`;
       }
 
       const payload = body ?? {};
-      payload.context = {
-        platform_config: {
-          host: process.env.TIMBAL_API_HOST,
-          auth: {
-            type: "bearer",
-            token: accessToken,
+      if (!isLocal) {
+        payload.context = {
+          platform_config: {
+            host: process.env.TIMBAL_API_HOST,
+            auth: {
+              type: "bearer",
+              token: accessToken,
+            },
+            subject: {
+              org_id: config.timbal.orgId,
+            },
           },
-          subject: {
-            org_id: config.timbal.orgId,
-            app_id: deployment.target?.id.toString(),
-          },
-        },
-      };
-      const url = `https://${deployment.domain}/stream`;
+        };
+      }
 
       try {
         const res = await fetch(url, {
