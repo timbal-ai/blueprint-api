@@ -76,7 +76,7 @@ async function listWorkforces(token: string): Promise<{ id: string }[]> {
 }
 
 async function listWorkforcesFromManifests(): Promise<{ id: string }[]> {
-  const workforceDir = resolve(import.meta.dir, "../../workforce");
+  const workforceDir = resolve(import.meta.dir, "../../../workforce");
   const entries = await readdir(workforceDir, { withFileTypes: true });
   const results: { id: string }[] = [];
 
