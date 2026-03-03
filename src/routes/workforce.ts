@@ -163,16 +163,14 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
 
       const payload = body ?? {};
       if (!isLocal) {
-        payload.context = {
-          platform_config: {
-            host: process.env.TIMBAL_API_HOST,
-            auth: {
-              type: "bearer",
-              token: accessToken,
-            },
-            subject: {
-              org_id: config.timbal.orgId,
-            },
+        if (!payload.context) {
+          payload.context = {};
+        }
+        payload.context.platform_config = {
+          host: process.env.TIMBAL_API_HOST,
+          auth: {
+            type: "bearer",
+            token: accessToken,
           },
         };
       }
@@ -221,16 +219,14 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
 
       const payload = body ?? {};
       if (!isLocal) {
-        payload.context = {
-          platform_config: {
-            host: process.env.TIMBAL_API_HOST,
-            auth: {
-              type: "bearer",
-              token: accessToken,
-            },
-            subject: {
-              org_id: config.timbal.orgId,
-            },
+        if (!payload.context) {
+          payload.context = {};
+        }
+        payload.context.platform_config = {
+          host: process.env.TIMBAL_API_HOST,
+          auth: {
+            type: "bearer",
+            token: accessToken,
           },
         };
       }
