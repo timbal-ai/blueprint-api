@@ -1,5 +1,6 @@
 import { readdir, readFile } from "fs/promises";
-import { resolve } from "path";
+import { resolve, dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { Elysia, t } from "elysia";
 import { config } from "../config";
 import { authMiddleware } from "../auth/middleware";
@@ -75,7 +76,8 @@ async function listWorkforces(token: string): Promise<{ id: string }[]> {
   }
 }
 
-const WORKFORCE_DIR = resolve(import.meta.dir, "../../../workforce");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const WORKFORCE_DIR = join(__dirname, "..", "..", "..", "workforce");
 
 async function listWorkforcesFromManifests(): Promise<{ id: string }[]> {
   const entries = await readdir(WORKFORCE_DIR, { withFileTypes: true });
