@@ -11,12 +11,11 @@ async function resolveDeployment(id: string, token: string): Promise<any> {
   const cached = deploymentCache.get(id);
   if (cached) return cached;
 
-  console.log(`Resolving deployment for workforce ${id}`);
   const url = new URL(
-    `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
+    `https://${config.timbal.apiHost}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
   );
   url.searchParams.set("status", "running");
-  url.searchParams.set("project_env_id", process.env.TIMBAL_PROJECT_ENV_ID!);
+  url.searchParams.set("project_env_id", config.timbal.projectEnvId);
   url.searchParams.set("manifest_id", id);
 
   try {
@@ -33,7 +32,6 @@ async function resolveDeployment(id: string, token: string): Promise<any> {
     if (!deployment?.domain) return null;
 
     deploymentCache.set(id, deployment);
-    console.log(`Cached deployment for workforce ${id}:`, deployment);
     return deployment;
   } catch (err) {
     console.error(err);
@@ -43,10 +41,10 @@ async function resolveDeployment(id: string, token: string): Promise<any> {
 
 async function listWorkforces(token: string): Promise<{ id: string }[]> {
   const url = new URL(
-    `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
+    `https://${config.timbal.apiHost}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}/deployments`,
   );
   url.searchParams.set("status", "running");
-  url.searchParams.set("project_env_id", process.env.TIMBAL_PROJECT_ENV_ID!);
+  url.searchParams.set("project_env_id", config.timbal.projectEnvId);
 
   try {
     const res = await fetch(url, {
@@ -133,7 +131,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .get(
     "/",
     async ({ accessToken }) => {
-      if (!process.env.TIMBAL_PROJECT_ENV_ID) {
+      if (!config.timbal.projectEnvId) {
         return await listWorkforcesFromManifests();
       }
       return await listWorkforces(accessToken!);
@@ -150,7 +148,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .post(
     "/:id",
     async ({ params, body, accessToken, status, set }) => {
-      const isLocal = !process.env.TIMBAL_PROJECT_ENV_ID;
+      const isLocal = !config.timbal.projectEnvId;
       let url: string;
 
       if (isLocal) {
@@ -169,7 +167,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
           payload.context = {};
         }
         payload.context.platform_config = {
-          host: process.env.TIMBAL_API_HOST,
+          host: config.timbal.apiHost,
           auth: {
             type: "bearer",
             token: accessToken,
@@ -206,7 +204,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .post(
     "/:id/stream",
     async ({ params, body, accessToken, status, set }) => {
-      const isLocal = !process.env.TIMBAL_PROJECT_ENV_ID;
+      const isLocal = !config.timbal.projectEnvId;
       let url: string;
 
       if (isLocal) {
@@ -225,7 +223,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
           payload.context = {};
         }
         payload.context.platform_config = {
-          host: process.env.TIMBAL_API_HOST,
+          host: config.timbal.apiHost,
           auth: {
             type: "bearer",
             token: accessToken,

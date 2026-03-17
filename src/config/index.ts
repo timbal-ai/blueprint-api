@@ -7,8 +7,9 @@ export const config = {
     description: "A production-ready Timbal API",
   },
   timbal: {
-    apiUrl: `https://${process.env.TIMBAL_API_HOST || "api.timbal.ai"}`,
+    apiHost: process.env.TIMBAL_API_HOST || "api.timbal.ai",
     orgId: process.env.TIMBAL_ORG_ID || "",
     projectId: process.env.TIMBAL_PROJECT_ID || "",
+    projectEnvId: process.env.TIMBAL_PROJECT_ENV_ID || "",
   },
 } as const;

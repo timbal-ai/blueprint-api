@@ -8,7 +8,7 @@ import type { AuthUser } from "../types";
 export async function validateWithTimbal(
   token: string,
 ): Promise<AuthUser | null> {
-  const url = `${config.timbal.apiUrl}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}`;
+  const url = `https://${config.timbal.apiHost}/orgs/${config.timbal.orgId}/projects/${config.timbal.projectId}`;
 
   try {
     const response = await fetch(url, {
@@ -16,7 +16,6 @@ export async function validateWithTimbal(
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) {
-      console.log("validateWithTimbal:", response.status, await response.clone().text());
       return null;
     }
     return { id: "timbal-authenticated" };
@@ -99,7 +98,7 @@ export const authMiddleware = new Elysia({ name: "auth" })
       },
     },
   })
-  .onBeforeHandle({ as: "global" }, ({ path, user, cookie }) => {
+  .onBeforeHandle({ as: "global" }, ({ path, user, cookie, set }) => {
     if (isLocalDev) return;
 
     const normalizedPath = path.startsWith("/api/")
@@ -118,14 +117,11 @@ export const authMiddleware = new Elysia({ name: "auth" })
       if (normalizedPath.startsWith("/docs")) {
         clearAuthCookie(cookie);
         const prefix = path.startsWith("/api") ? "/api" : "";
-        return new Response(null, {
-          status: 302,
-          headers: { Location: `${prefix}/auth/login` },
-        });
+        set.status = 302;
+        set.headers = { Location: `${prefix}/auth/login` };
+        return;
       }
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+      set.status = 401;
+      return { error: "Unauthorized" };
     }
   });

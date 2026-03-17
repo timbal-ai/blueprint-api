@@ -72,7 +72,14 @@ const coreApp = new Elysia()
 
 const app = new Elysia()
   .use(cors())
-  .use(logixlysia())
+  .use(
+    logixlysia({
+      config: {
+        showStartupMessage: false,
+        customLogFormat: "{now} {level} {duration} {method} {pathname} {status}",
+      },
+    }),
+  )
   .use(coreApp)
   .group("/api", (app) => app.use(coreApp))
   .listen(config.port);
