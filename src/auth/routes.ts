@@ -1,20 +1,10 @@
 import { Elysia, t } from "elysia";
-import { config } from "../../config";
-import {
-  validateWithTimbal,
-  setAuthCookie,
-  clearAuthCookie,
-} from "../middleware";
+import { timbal, setAuthCookie, clearAuthCookie } from "./middleware";
 
-const TIMBAL_AUTH_URL = `https://${config.timbal.apiHost}`;
 const LOGIN_PAGE_PATH = "./src/auth/pages/login.html";
 const CALLBACK_PAGE_PATH = "./src/auth/pages/callback.html";
 const LOGOS_DIR = "./src/auth/pages/logos";
 
-/**
- * Get the origin from the request, respecting proxy headers
- * Only allows http for localhost/127.0.0.1, otherwise enforces https
- */
 function getOrigin(request: Request): string {
   const forwardedProto = request.headers.get("x-forwarded-proto");
   const forwardedHost = request.headers.get("x-forwarded-host");
@@ -23,10 +13,7 @@ function getOrigin(request: Request): string {
   const protocol = forwardedProto || url.protocol.replace(":", "");
   const host = forwardedHost || url.host;
 
-  // Extract hostname without port
   const hostname = host.split(":")[0];
-
-  // Only allow http for localhost and 127.0.0.1
   const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
   const finalProtocol =
     protocol === "http" && !isLocalhost ? "https" : protocol;
@@ -34,11 +21,13 @@ function getOrigin(request: Request): string {
   return `${finalProtocol}://${host}`;
 }
 
-/**
- * Auth routes
- */
+function getCallbackUrl(request: Request, path: string): string {
+  const origin = getOrigin(request);
+  const prefix = path.startsWith("/api") ? "/api" : "";
+  return `${origin}${prefix}/auth/callback`;
+}
+
 export const authRoutes = new Elysia({ prefix: "/auth" })
-  // Login page
   .get(
     "/login",
     async ({ path }) => {
@@ -51,29 +40,22 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     { detail: { hide: true } },
   )
 
-  // Logos static files
   .get(
     "/logos/:filename",
-    ({ params }) => {
-      return Bun.file(`${LOGOS_DIR}/${params.filename}`);
-    },
+    ({ params }) => Bun.file(`${LOGOS_DIR}/${params.filename}`),
     { detail: { hide: true } },
   )
 
-  // OAuth redirect to Timbal
   .get(
     "/:provider",
     ({ params, redirect, request, path }) => {
       const { provider } = params;
-      const validProviders = ["github", "google", "microsoft"];
-      if (!validProviders.includes(provider)) {
+      const validProviders = ["github", "google", "microsoft"] as const;
+      if (!validProviders.includes(provider as any)) {
         return new Response("Invalid provider", { status: 400 });
       }
-      const origin = getOrigin(request);
-      const prefix = path.startsWith("/api") ? "/api" : "";
-      const callbackUrl = `${origin}${prefix}/auth/callback`;
-      const url = `${TIMBAL_AUTH_URL}/oauth/authorize?provider=${provider}&redirect_uri=${encodeURIComponent(callbackUrl)}`;
-      return redirect(url);
+      const callbackUrl = getCallbackUrl(request, path);
+      return redirect(timbal.getOAuthUrl(provider as any, callbackUrl));
     },
     {
       params: t.Object({ provider: t.String() }),
@@ -81,7 +63,6 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     },
   )
 
-  // Callback page (extracts hash tokens via JS)
   .get(
     "/callback",
     async ({ path }) => {
@@ -94,58 +75,40 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     { detail: { hide: true } },
   )
 
-  // Set token (receives access token from callback JS, refresh token stays in localStorage)
   .post(
     "/set-token",
     async ({ body, cookie }) => {
-      const { access_token } = body;
-
-      const user = await validateWithTimbal(access_token);
-      if (!user) {
+      try {
+        const session = await timbal.as(body.access_token).getSession();
+        setAuthCookie(cookie, body.access_token);
+        return { success: true, user: session };
+      } catch {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
-
-      setAuthCookie(cookie, access_token);
-      return { success: true, user };
     },
     {
-      body: t.Object({
-        access_token: t.String(),
-      }),
+      body: t.Object({ access_token: t.String() }),
       detail: { hide: true },
     },
   )
 
-  // Magic link request
   .post(
     "/magic-link",
     async ({ body, request, path }) => {
-      const { email } = body;
-      const origin = getOrigin(request);
-      const prefix = path.startsWith("/api") ? "/api" : "";
-      const callbackUrl = `${origin}${prefix}/auth/callback`;
-
-      const response = await fetch(`${TIMBAL_AUTH_URL}/auth/magic-link`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, redirect_uri: callbackUrl }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        return new Response(
-          JSON.stringify({ error: error || "Failed to send magic link" }),
-          {
-            status: response.status,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+      try {
+        await timbal.sendMagicLink(body.email, getCallbackUrl(request, path));
+        return { success: true, message: "Check your email for the login link" };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to send magic link";
+        return new Response(JSON.stringify({ error: message }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
-
-      return { success: true, message: "Check your email for the login link" };
     },
     {
       body: t.Object({ email: t.String() }),
@@ -153,37 +116,23 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     },
   )
 
-  // Refresh token (receives refresh_token from body - stored in client localStorage)
   .post(
     "/refresh",
     async ({ body, cookie }) => {
-      const { refresh_token } = body;
-
-      const response = await fetch(`${TIMBAL_AUTH_URL}/oauth/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "refresh_token",
-          refresh_token,
-        }),
-      });
-
-      if (!response.ok) {
+      try {
+        const tokens = await timbal.refreshToken(body.refresh_token);
+        setAuthCookie(cookie, tokens.access_token);
+        return {
+          success: true,
+          refresh_token: tokens.refresh_token || body.refresh_token,
+        };
+      } catch {
         clearAuthCookie(cookie);
         return new Response(JSON.stringify({ error: "Refresh failed" }), {
           status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
-
-      const tokens = await response.json();
-      setAuthCookie(cookie, tokens.access_token);
-
-      // Return new refresh token if provided (client stores in localStorage)
-      return {
-        success: true,
-        refresh_token: tokens.refresh_token || refresh_token,
-      };
     },
     {
       body: t.Object({ refresh_token: t.String() }),
@@ -191,7 +140,6 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     },
   )
 
-  // Logout
   .post(
     "/logout",
     ({ cookie, path }) => {
@@ -205,7 +153,6 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     { detail: { hide: true } },
   )
 
-  // Get current user
   .get(
     "/me",
     async ({ cookie }) => {
@@ -217,16 +164,15 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         });
       }
 
-      const user = await validateWithTimbal(token);
-      if (!user) {
+      try {
+        return await timbal.as(token).getSession();
+      } catch {
         clearAuthCookie(cookie);
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
-
-      return user;
     },
     { detail: { hide: true } },
   );

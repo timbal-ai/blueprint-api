@@ -2,7 +2,6 @@ import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import logixlysia from "logixlysia";
-import { config } from "./config";
 import { authMiddleware } from "./auth/middleware";
 import { authRoutes } from "./auth/routes";
 import { healthcheckRoutes } from "./routes/healthcheck";
@@ -19,9 +18,9 @@ const coreApp = new Elysia()
       path: "/api-spec",
       documentation: {
         info: {
-          title: config.api.title,
-          version: config.api.version,
-          description: config.api.description,
+          title: "Blueprint API",
+          version: "1.0.0",
+          description: "A production-ready Timbal API",
         },
         tags: [
           { name: "Health", description: "Health check endpoints" },
@@ -85,7 +84,7 @@ const app = new Elysia()
   })
   .use(coreApp)
   .group("/api", (app) => app.use(coreApp))
-  .listen(config.port);
+  .listen(Number(process.env.PORT) || 3000);
 
 console.log(
   `Timbal API is running at http://${app.server?.hostname}:${app.server?.port}`,
