@@ -25,19 +25,22 @@ const isLocalDev = !process.env.TIMBAL_PROJECT_ID;
 
 async function resolveToken(
   cookie: Record<string, any>,
-  headers: Headers,
+  request: Request,
 ): Promise<string | null> {
   if (isLocalDev) return null;
 
+  const { method } = request;
+  const path = new URL(request.url).pathname;
+
   // Bearer header takes priority
-  const authHeader = headers.get("authorization");
+  const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     try {
       await timbal.as(token).getProject();
       return token;
     } catch (err) {
-      console.warn("[auth] bearer token rejected:", err instanceof Error ? err.message : err);
+      console.warn(`[auth] ${method} ${path} — bearer token rejected:`, err instanceof Error ? err.message : err);
       return null;
     }
   }
@@ -49,18 +52,18 @@ async function resolveToken(
       await timbal.as(token).getProject();
       return token;
     } catch (err) {
-      console.warn("[auth] cookie token rejected:", err instanceof Error ? err.message : err);
+      console.warn(`[auth] ${method} ${path} — cookie token rejected:`, err instanceof Error ? err.message : err);
       return null;
     }
   }
 
-  console.warn("[auth] no token found (no bearer header, no cookie)");
+  console.warn(`[auth] ${method} ${path} — no token found`);
   return null;
 }
 
 export const authMiddleware = new Elysia({ name: "auth" })
   .derive({ as: "global" }, async ({ cookie, request }) => {
-    const token = await resolveToken(cookie, request.headers);
+    const token = await resolveToken(cookie, request);
     const client = token ? timbal.as(token) : timbal;
     return { token, client };
   })
