@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import logixlysia from "logixlysia";
+import { TimbalApiError } from "@timbal-ai/timbal-sdk";
 import { authMiddleware } from "./auth/middleware";
 import { authRoutes } from "./auth/routes";
 import { healthcheckRoutes } from "./routes/healthcheck";
@@ -24,7 +25,7 @@ const coreApp = new Elysia()
         },
         tags: [
           { name: "Health", description: "Health check endpoints" },
-          { name: "Auth", description: "Authentication verification" },
+          { name: "Session", description: "Current user session" },
           { name: "Workforce", description: "Workforce component endpoints" },
         ],
         components: {
@@ -79,8 +80,12 @@ const app = new Elysia()
       },
     }),
   )
-  .onError({ as: "global" }, ({ error, request }) => {
+  .onError({ as: "global" }, ({ error, request, set }) => {
     console.error(`[${request.method}] ${new URL(request.url).pathname}`, error);
+    if (error instanceof TimbalApiError) {
+      set.status = error.statusCode >= 400 ? error.statusCode : 502;
+      return { error: error.message };
+    }
   })
   .use(coreApp)
   .group("/api", (app) => app.use(coreApp))

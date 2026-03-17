@@ -64,8 +64,8 @@ async function resolveToken(
 export const authMiddleware = new Elysia({ name: "auth" })
   .derive({ as: "global" }, async ({ cookie, request }) => {
     const token = await resolveToken(cookie, request);
-    const client = token ? timbal.as(token) : timbal;
-    return { token, client };
+    const scopedTimbal = token ? timbal.as(token) : timbal;
+    return { token, timbal: scopedTimbal };
   })
   .onBeforeHandle({ as: "global" }, ({ path, token, cookie, set }) => {
     if (isLocalDev) return;

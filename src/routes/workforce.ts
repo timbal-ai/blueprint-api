@@ -5,8 +5,8 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .use(authMiddleware)
   .get(
     "/",
-    async ({ client }) => {
-      return await client.listWorkforces();
+    async ({ timbal }) => {
+      return await timbal.listWorkforces();
     },
     {
       detail: {
@@ -19,15 +19,8 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id",
-    async ({ params, body, client, status, set }) => {
-      try {
-        const res = await client.callWorkforce(params.id, body ?? {});
-        set.status = res.status;
-        return new Response(res.body, { headers: res.headers });
-      } catch (err) {
-        console.error(err);
-        return status(502);
-      }
+    async ({ params, body, timbal }) => {
+      return await timbal.callWorkforce(params.id, body ?? {});
     },
     {
       params: t.Object({ id: t.String() }),
@@ -42,29 +35,8 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id/stream",
-    async ({ params, body, client, status, set }) => {
-      try {
-        const res = await client.streamWorkforce(params.id, body ?? {});
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`[stream] upstream ${res.status}:`, text);
-          set.status = res.status;
-          return text;
-        }
-
-        set.status = res.status;
-        return new Response(res.body, {
-          headers: {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive",
-          },
-        });
-      } catch (err) {
-        console.error(`[stream] fetch failed:`, err);
-        return status(502);
-      }
+    async ({ params, body, timbal }) => {
+      return await timbal.streamWorkforce(params.id, body ?? {});
     },
     {
       params: t.Object({ id: t.String() }),

@@ -5,14 +5,14 @@ export const sessionRoutes = new Elysia()
   .use(authMiddleware)
   .get(
     "/me",
-    async ({ client }) => {
-      return await client.getSession();
+    async ({ timbal }) => {
+      return await timbal.getSession();
     },
     {
       detail: {
         summary: "Get current user",
         description: "Returns the authenticated user's session info",
-        tags: ["Auth"],
+        tags: ["Session"],
       },
     },
   );
