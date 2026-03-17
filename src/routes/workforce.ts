@@ -98,31 +98,24 @@ async function listWorkforcesFromManifests(): Promise<{ id: string }[]> {
   return results;
 }
 
+function parseWorkforceEnv(): Map<string, number> {
+  const raw = process.env.TIMBAL_START_WORKFORCE ?? process.env.TIMBAL_WORKFORCE;
+  if (!raw) return new Map();
+  const map = new Map<string, number>();
+  for (const entry of raw.split(",")) {
+    const [id, port] = entry.split(":");
+    if (id && port) map.set(id, Number(port));
+  }
+  return map;
+}
+
 async function resolveLocalDeployment(
   manifestId: string,
 ): Promise<string | null> {
-  const entries = await readdir(WORKFORCE_DIR, { withFileTypes: true });
-  const dirs = entries
-    .filter((e) => e.isDirectory())
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const basePort = Number(process.env.WORKFORCE_LOCAL_BASE_PORT) || 4455;
-
-  for (let i = 0; i < dirs.length; i++) {
-    try {
-      const yaml = await readFile(
-        resolve(WORKFORCE_DIR, dirs[i].name, "timbal.yaml"),
-        "utf-8",
-      );
-      const match = yaml.match(/_id:\s*"([^"]+)"/);
-      if (match?.[1] === manifestId) {
-        return `http://localhost:${basePort + i}`;
-      }
-    } catch {
-      // no timbal.yaml — skip
-    }
-  }
-
-  return null;
+  const workforceMap = parseWorkforceEnv();
+  const port = workforceMap.get(manifestId);
+  console.log(`[local] resolving ${manifestId} via TIMBAL_START_WORKFORCE → port ${port ?? "not found"}`);
+  return port ? `http://localhost:${port}` : null;
 }
 
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
@@ -237,6 +230,12 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
           body: JSON.stringify(payload),
         });
 
+        if (!res.ok) {
+          const text = await res.text();
+          console.error(`[stream] upstream ${res.status} for ${url}:`, text);
+          set.status = res.status;
+          return text;
+        }
         set.status = res.status;
         return new Response(res.body, {
           headers: {
@@ -246,7 +245,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
           },
         });
       } catch (err) {
-        console.error(err);
+        console.error(`[stream] fetch failed for ${url}:`, err);
         return status(502);
       }
     },
