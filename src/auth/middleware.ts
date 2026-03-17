@@ -36,7 +36,8 @@ async function resolveToken(
     try {
       await timbal.as(token).getProject();
       return token;
-    } catch {
+    } catch (err) {
+      console.warn("[auth] bearer token rejected:", err instanceof Error ? err.message : err);
       return null;
     }
   }
@@ -47,11 +48,13 @@ async function resolveToken(
     try {
       await timbal.as(token).getProject();
       return token;
-    } catch {
+    } catch (err) {
+      console.warn("[auth] cookie token rejected:", err instanceof Error ? err.message : err);
       return null;
     }
   }
 
+  console.warn("[auth] no token found (no bearer header, no cookie)");
   return null;
 }
 
