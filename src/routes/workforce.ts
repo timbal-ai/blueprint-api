@@ -1,9 +1,5 @@
 import { Elysia, t } from "elysia";
-import { timbal, authMiddleware } from "../auth/middleware";
-
-function getClient(accessToken: string | null) {
-  return accessToken ? timbal.as(accessToken) : timbal;
-}
+import { getClient, authMiddleware } from "../auth/middleware";
 
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .use(authMiddleware)

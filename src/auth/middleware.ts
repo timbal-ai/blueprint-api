@@ -3,6 +3,10 @@ import Timbal from "@timbal-ai/timbal-sdk";
 
 export const timbal = new Timbal();
 
+export function getClient(accessToken: string | null) {
+  return accessToken ? timbal.as(accessToken) : timbal;
+}
+
 export function setAuthCookie(
   cookie: Record<string, any>,
   accessToken: string,

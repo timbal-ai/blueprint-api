@@ -5,7 +5,7 @@ import logixlysia from "logixlysia";
 import { authMiddleware } from "./auth/middleware";
 import { authRoutes } from "./auth/routes";
 import { healthcheckRoutes } from "./routes/healthcheck";
-import { verifyRoutes } from "./routes/verify";
+import { sessionRoutes } from "./routes/session";
 import { workforceRoutes } from "./routes/workforce";
 
 const DOCS_PAGE_PATH = "./src/pages/docs.html";
@@ -66,7 +66,7 @@ const coreApp = new Elysia()
     { detail: { hide: true } },
   )
   .use(healthcheckRoutes)
-  .use(verifyRoutes)
+  .use(sessionRoutes)
   .use(workforceRoutes);
 
 const app = new Elysia()

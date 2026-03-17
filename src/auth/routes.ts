@@ -151,28 +151,4 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       });
     },
     { detail: { hide: true } },
-  )
-
-  .get(
-    "/me",
-    async ({ cookie }) => {
-      const token = cookie.timbal_access_token?.value as string | undefined;
-      if (!token) {
-        return new Response(JSON.stringify({ error: "Not authenticated" }), {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      try {
-        return await timbal.as(token).getSession();
-      } catch {
-        clearAuthCookie(cookie);
-        return new Response(JSON.stringify({ error: "Invalid token" }), {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    },
-    { detail: { hide: true } },
   );
