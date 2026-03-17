@@ -1,12 +1,12 @@
 import { Elysia } from "elysia";
-import { getClient, authMiddleware } from "../auth/middleware";
+import { authMiddleware } from "../auth/middleware";
 
 export const sessionRoutes = new Elysia()
   .use(authMiddleware)
   .get(
     "/me",
-    async ({ accessToken }) => {
-      return await getClient(accessToken).getSession();
+    async ({ client }) => {
+      return await client.getSession();
     },
     {
       detail: {

@@ -1,12 +1,12 @@
 import { Elysia, t } from "elysia";
-import { getClient, authMiddleware } from "../auth/middleware";
+import { authMiddleware } from "../auth/middleware";
 
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .use(authMiddleware)
   .get(
     "/",
-    async ({ accessToken }) => {
-      return await getClient(accessToken).listWorkforces();
+    async ({ client }) => {
+      return await client.listWorkforces();
     },
     {
       detail: {
@@ -19,12 +19,9 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id",
-    async ({ params, body, accessToken, status, set }) => {
+    async ({ params, body, client, status, set }) => {
       try {
-        const res = await getClient(accessToken).callWorkforce(
-          params.id,
-          body ?? {},
-        );
+        const res = await client.callWorkforce(params.id, body ?? {});
         set.status = res.status;
         return new Response(res.body, { headers: res.headers });
       } catch (err) {
@@ -45,12 +42,9 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id/stream",
-    async ({ params, body, accessToken, status, set }) => {
+    async ({ params, body, client, status, set }) => {
       try {
-        const res = await getClient(accessToken).streamWorkforce(
-          params.id,
-          body ?? {},
-        );
+        const res = await client.streamWorkforce(params.id, body ?? {});
 
         if (!res.ok) {
           const text = await res.text();

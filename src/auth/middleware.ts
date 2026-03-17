@@ -3,16 +3,12 @@ import Timbal from "@timbal-ai/timbal-sdk";
 
 export const timbal = new Timbal();
 
-export function getClient(accessToken: string | null) {
-  return accessToken ? timbal.as(accessToken) : timbal;
-}
-
 export function setAuthCookie(
   cookie: Record<string, any>,
-  accessToken: string,
+  token: string,
 ) {
   cookie.timbal_access_token.set({
-    value: accessToken,
+    value: token,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -61,10 +57,11 @@ async function resolveToken(
 
 export const authMiddleware = new Elysia({ name: "auth" })
   .derive({ as: "global" }, async ({ cookie, request }) => {
-    const accessToken = await resolveToken(cookie, request.headers);
-    return { accessToken };
+    const token = await resolveToken(cookie, request.headers);
+    const client = token ? timbal.as(token) : timbal;
+    return { token, client };
   })
-  .onBeforeHandle({ as: "global" }, ({ path, accessToken, cookie, set }) => {
+  .onBeforeHandle({ as: "global" }, ({ path, token, cookie, set }) => {
     if (isLocalDev) return;
 
     const normalizedPath = path.startsWith("/api/")
@@ -79,7 +76,7 @@ export const authMiddleware = new Elysia({ name: "auth" })
     )
       return;
 
-    if (!accessToken) {
+    if (!token) {
       if (normalizedPath.startsWith("/docs")) {
         clearAuthCookie(cookie);
         const prefix = path.startsWith("/api") ? "/api" : "";
