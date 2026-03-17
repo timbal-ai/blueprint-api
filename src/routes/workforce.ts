@@ -1,12 +1,16 @@
 import { Elysia, t } from "elysia";
 import { timbal, authMiddleware } from "../auth/middleware";
 
+function getClient(accessToken: string | null) {
+  return accessToken ? timbal.as(accessToken) : timbal;
+}
+
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .use(authMiddleware)
   .get(
     "/",
     async ({ accessToken }) => {
-      return await timbal.as(accessToken!).listWorkforces();
+      return await getClient(accessToken).listWorkforces();
     },
     {
       detail: {
@@ -21,9 +25,10 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
     "/:id",
     async ({ params, body, accessToken, status, set }) => {
       try {
-        const res = await timbal
-          .as(accessToken!)
-          .callWorkforce(params.id, body ?? {});
+        const res = await getClient(accessToken).callWorkforce(
+          params.id,
+          body ?? {},
+        );
         set.status = res.status;
         return new Response(res.body, { headers: res.headers });
       } catch (err) {
@@ -46,9 +51,10 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
     "/:id/stream",
     async ({ params, body, accessToken, status, set }) => {
       try {
-        const res = await timbal
-          .as(accessToken!)
-          .streamWorkforce(params.id, body ?? {});
+        const res = await getClient(accessToken).streamWorkforce(
+          params.id,
+          body ?? {},
+        );
 
         if (!res.ok) {
           const text = await res.text();

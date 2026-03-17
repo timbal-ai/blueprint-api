@@ -27,7 +27,7 @@ async function resolveToken(
   cookie: Record<string, any>,
   headers: Headers,
 ): Promise<string | null> {
-  if (isLocalDev) return "local-dev";
+  if (isLocalDev) return null;
 
   // Bearer header takes priority
   const authHeader = headers.get("authorization");
