@@ -80,6 +80,9 @@ const app = new Elysia()
       },
     }),
   )
+  .onError({ as: "global" }, ({ error, request }) => {
+    console.error(`[${request.method}] ${new URL(request.url).pathname}`, error);
+  })
   .use(coreApp)
   .group("/api", (app) => app.use(coreApp))
   .listen(config.port);
