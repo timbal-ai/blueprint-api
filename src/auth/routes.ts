@@ -6,6 +6,14 @@ const CALLBACK_PAGE_PATH = "./src/auth/pages/callback.html";
 const LOGOS_DIR = "./src/auth/pages/logos";
 
 function getOrigin(request: Request): string {
+  const studioSlug = process.env.TIMBAL_STUDIO;
+  if (studioSlug) {
+    const baseUrl = process.env.TIMBAL_BASE_URL || "https://api.timbal.ai";
+    const isDev = baseUrl.includes("dev.");
+    const domain = isDev ? `${studioSlug}.projects.dev.timbal.ai` : `${studioSlug}.projects.timbal.ai`;
+    return `https://${domain}`;
+  }
+
   const forwardedProto = request.headers.get("x-forwarded-proto");
   const forwardedHost = request.headers.get("x-forwarded-host");
 
