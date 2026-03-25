@@ -8,7 +8,8 @@ const LOGOS_DIR = "./src/auth/pages/logos";
 function getOrigin(request: Request): string {
   const studioSlug = process.env.TIMBAL_STUDIO;
   if (studioSlug) {
-    const baseUrl = process.env.TIMBAL_BASE_URL || "https://api.timbal.ai";
+    const baseUrl = process.env.TIMBAL_BASE_URL
+      || (process.env.TIMBAL_API_HOST ? `https://${process.env.TIMBAL_API_HOST}` : "https://api.timbal.ai");
     const isDev = baseUrl.includes("dev.");
     const domain = isDev ? `${studioSlug}.projects.dev.timbal.ai` : `${studioSlug}.projects.timbal.ai`;
     return `https://${domain}`;
