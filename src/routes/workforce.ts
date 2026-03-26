@@ -1,11 +1,9 @@
 import { Elysia, t } from "elysia";
-import { authMiddleware } from "../auth/middleware";
 
 export const workforceRoutes = new Elysia({ prefix: "/workforce" })
-  .use(authMiddleware)
   .get(
     "/",
-    async ({ timbal }) => {
+    async ({ timbal }: any) => {
       return await timbal.listWorkforces();
     },
     {
@@ -19,7 +17,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id",
-    async ({ params, body, timbal }) => {
+    async ({ params, body, timbal }: any) => {
       return await timbal.callWorkforce(params.id, body ?? {});
     },
     {
@@ -35,7 +33,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id/stream",
-    async ({ params, body, timbal }) => {
+    async ({ params, body, timbal }: any) => {
       return await timbal.streamWorkforce(params.id, body ?? {});
     },
     {

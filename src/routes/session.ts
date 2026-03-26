@@ -1,11 +1,9 @@
 import { Elysia } from "elysia";
-import { authMiddleware } from "../auth/middleware";
 
 export const sessionRoutes = new Elysia()
-  .use(authMiddleware)
   .get(
     "/me",
-    async ({ timbal }) => {
+    async ({ timbal }: any) => {
       return await timbal.getSession();
     },
     {

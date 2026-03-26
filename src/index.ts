@@ -3,8 +3,7 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import logixlysia from "logixlysia";
 import { TimbalApiError } from "@timbal-ai/timbal-sdk";
-import { authMiddleware } from "./auth/middleware";
-import { authRoutes } from "./auth/routes";
+import { timbalAuth } from "@timbal-ai/timbal-sdk/elysia";
 import { healthcheckRoutes } from "./routes/healthcheck";
 import { sessionRoutes } from "./routes/session";
 import { workforceRoutes } from "./routes/workforce";
@@ -12,8 +11,7 @@ import { workforceRoutes } from "./routes/workforce";
 const DOCS_PAGE_PATH = "./src/pages/docs.html";
 
 const coreApp = new Elysia()
-  .use(authRoutes)
-  .use(authMiddleware)
+  .use(timbalAuth())
   .use(
     swagger({
       path: "/api-spec",

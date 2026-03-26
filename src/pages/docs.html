@@ -13,36 +13,44 @@
         <style>
             .logout-btn {
                 position: fixed;
-                bottom: 16px;
+                top: 12px;
                 right: 16px;
-                padding: 6px 12px;
-                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                padding: 0;
                 color: #71717a;
                 background: transparent;
-                border: 1px solid #27272a;
+                border: none;
                 border-radius: 6px;
                 cursor: pointer;
-                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
                 transition: all 0.15s;
                 z-index: 1000;
             }
             .logout-btn:hover {
-                color: #a1a1aa;
-                border-color: #3f3f46;
-                background: #18181b;
+                color: #fafafa;
+                background: #27272a;
+            }
+            .logout-btn svg {
+                width: 16px;
+                height: 16px;
             }
         </style>
     </head>
     <body>
         <div id="app"></div>
-        <button class="logout-btn" id="logout-btn" onclick="logout()">Sign out</button>
+        <button class="logout-btn" id="logout-btn" onclick="logout()" title="Sign out">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
         <script>
             function logout() {
-                localStorage.removeItem("refresh_token");
-                fetch("{{PREFIX}}/auth/logout", {
-                    method: "POST",
-                    credentials: "same-origin",
-                }).then(() => (window.location.href = "{{PREFIX}}/auth/login"));
+                localStorage.removeItem("timbal_project_access_token");
+                localStorage.removeItem("timbal_project_refresh_token");
+                const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+                fetch("{{PREFIX}}/auth/logout", { method: "POST" })
+                    .finally(() => (window.location.href = "{{PREFIX}}/auth/login?return_to=" + returnTo));
             }
 
             Scalar.createApiReference("#app", {
@@ -51,29 +59,42 @@
                 theme: "deepSpace",
                 forceDarkModeState: "dark",
                 persistAuth: true,
-                customCss:
-                    'a[href="https://www.scalar.com"] { display: none !important; }',
+                customCss: `
+                    a[href="https://www.scalar.com"] { display: none !important; }
+                    .scalar-mcp-layer-link { display: none !important; }
+                `,
                 hideClientButton: true,
                 servers: [{ url: window.location.origin + "{{PREFIX}}" }],
             });
 
-            // Hide sign out button on localhost
-            if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+            // Hide sign out button in local dev (no auth)
+            if (!localStorage.getItem("timbal_project_access_token")) {
                 document.getElementById("logout-btn").style.display = "none";
             }
 
-            // Hide Ask AI button
+            // Hide Ask AI button — use CSS instead of a MutationObserver
+            // to avoid constant DOM thrashing from Scalar's SPA updates.
+            const style = document.createElement("style");
+            style.textContent = `
+                button[class*="ask"], span[class*="ask"],
+                button:has(> span) { }
+            `;
+
+            // One-shot: wait for Scalar to render, find and hide the button
             const hideAskAI = () => {
                 document.querySelectorAll("span, button").forEach((el) => {
-                    if (el.textContent?.trim() === "Ask AI")
+                    if (el.textContent?.trim().startsWith("Ask AI"))
                         el.style.display = "none";
                 });
             };
-            setTimeout(hideAskAI, 500);
-            new MutationObserver(hideAskAI).observe(document.body, {
-                childList: true,
-                subtree: true,
+            const obs = new MutationObserver(() => {
+                hideAskAI();
+                // Stop observing once we've found and hidden it
+                const found = [...document.querySelectorAll("span, button")]
+                    .some((el) => el.textContent?.trim().startsWith("Ask AI"));
+                if (found) obs.disconnect();
             });
+            obs.observe(document.body, { childList: true, subtree: true });
         </script>
     </body>
 </html>
