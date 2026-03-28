@@ -79,7 +79,10 @@ const app = new Elysia()
     }),
   )
   .onError({ as: "global" }, ({ error, request, set }) => {
-    console.error(`[${request.method}] ${new URL(request.url).pathname}`, error);
+    const isNotFound = (error as { code?: string }).code === "NOT_FOUND";
+    if (!isNotFound) {
+      console.error(`[${request.method}] ${new URL(request.url).pathname}`, error);
+    }
     if (error instanceof TimbalApiError) {
       set.status = error.statusCode >= 400 ? error.statusCode : 502;
       return { error: error.message };
