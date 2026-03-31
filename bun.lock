@@ -7,7 +7,7 @@
       "dependencies": {
         "@elysiajs/cors": "^1.4.1",
         "@elysiajs/swagger": "^1.3.1",
-        "@timbal-ai/timbal-sdk": "0.4.12",
+        "@timbal-ai/timbal-sdk": "0.5.1",
         "elysia": "latest",
         "logixlysia": "^6.1.0",
       },
@@ -33,7 +33,7 @@
 
     "@sinclair/typebox": ["@sinclair/typebox@0.34.48", "", {}, "sha512-kKJTNuK3AQOrgjjotVxMrCn1sUJwM76wMszfq1kdU4uYVJjvEWuFQ6HgvLt4Xz3fSmZlTOxJ/Ie13KnIcWQXFA=="],
 
-    "@timbal-ai/timbal-sdk": ["@timbal-ai/timbal-sdk@0.4.12", "", { "peerDependencies": { "elysia": ">=1.0.0" }, "optionalPeers": ["elysia"] }, "sha512-rV4CJjuBLqU+vD0FiwdxNouByF7L46jlmhi1oByP3g5I/0efnKwW3oWLveXQa2954oLzcySjKsNUulkKuDGDew=="],
+    "@timbal-ai/timbal-sdk": ["@timbal-ai/timbal-sdk@0.5.1", "", { "peerDependencies": { "elysia": ">=1.0.0" }, "optionalPeers": ["elysia"] }, "sha512-o8yqg9bqKQv7iLQYdOnwKYWYVnR8gp+l+aAAJ9I0JUzmuDGcRM5RQnXaIvKmMa+BsJZfpjPi0v6mHzN92WS2pw=="],
 
     "@tokenizer/inflate": ["@tokenizer/inflate@0.4.1", "", { "dependencies": { "debug": "^4.4.3", "token-types": "^6.1.1" } }, "sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA=="],
 
