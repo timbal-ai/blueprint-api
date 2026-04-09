@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
@@ -8,7 +9,7 @@ import { healthcheckRoutes } from "./routes/healthcheck";
 import { sessionRoutes } from "./routes/session";
 import { workforceRoutes } from "./routes/workforce";
 
-const DOCS_PAGE_PATH = "./src/pages/docs.html";
+const DOCS_PAGE_PATH = join(import.meta.dir, "pages", "docs.html");
 
 const coreApp = new Elysia()
   .use(timbalAuth())

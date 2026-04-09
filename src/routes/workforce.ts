@@ -4,7 +4,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .get(
     "/",
     async ({ timbal }: any) => {
-      return await timbal.listWorkforces();
+      return timbal.listWorkforces();
     },
     {
       detail: {
@@ -18,7 +18,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .post(
     "/:id",
     async ({ params, body, timbal }: any) => {
-      return await timbal.callWorkforce(params.id, body ?? {});
+      return timbal.callWorkforce(params.id, body ?? {});
     },
     {
       params: t.Object({ id: t.String() }),
@@ -34,7 +34,7 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   .post(
     "/:id/stream",
     async ({ params, body, timbal }: any) => {
-      return await timbal.streamWorkforce(params.id, body ?? {});
+      return timbal.streamWorkforce(params.id, body ?? {});
     },
     {
       params: t.Object({ id: t.String() }),

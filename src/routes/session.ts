@@ -4,7 +4,7 @@ export const sessionRoutes = new Elysia()
   .get(
     "/me",
     async ({ timbal }: any) => {
-      return await timbal.getSession();
+      return timbal.getSession();
     },
     {
       detail: {
