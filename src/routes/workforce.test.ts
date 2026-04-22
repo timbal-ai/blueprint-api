@@ -1,4 +1,12 @@
-import { describe, test, expect, mock, afterEach } from "bun:test";
+import {
+  describe,
+  test,
+  expect,
+  mock,
+  spyOn,
+  beforeEach,
+  afterEach,
+} from "bun:test";
 import { Elysia } from "elysia";
 import { TimbalApiError } from "@timbal-ai/timbal-sdk";
 import { workforceRoutes } from "./workforce";
@@ -240,6 +248,170 @@ describe("POST /workforce/:id", () => {
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: "kaboom" });
+  });
+});
+
+describe("set.status propagation (for external loggers like logixlysia)", () => {
+  async function makeAppWithStatusCapture(
+    timbal: unknown,
+  ): Promise<{ app: App; captured: { status?: number | string } }> {
+    const captured: { status?: number | string } = {};
+    const app = new Elysia()
+      .decorate("timbal", timbal as any)
+      .onAfterResponse({ as: "global" }, ({ set }: any) => {
+        captured.status = set.status;
+      })
+      .use(workforceRoutes);
+    await new Promise<void>((resolve) => app.listen(0, () => resolve()));
+    openApps.push(app);
+    return { app, captured };
+  }
+
+  test("set.status reflects upstream 400 (not the default 200)", async () => {
+    const timbal = {
+      callWorkforce: mock(
+        async () =>
+          new Response('{"error":"bad"}', {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    };
+    const { app, captured } = await makeAppWithStatusCapture(timbal);
+
+    await postJson(app, "/workforce/foo", {});
+
+    expect(captured.status).toBe(400);
+  });
+
+  test("set.status reflects upstream 502", async () => {
+    const timbal = {
+      callWorkforce: mock(async () => new Response("boom", { status: 502 })),
+    };
+    const { app, captured } = await makeAppWithStatusCapture(timbal);
+
+    await postJson(app, "/workforce/foo", {});
+
+    expect(captured.status).toBe(502);
+  });
+
+  test("set.status stays 200 on success", async () => {
+    const timbal = {
+      callWorkforce: mock(
+        async () =>
+          new Response("{}", {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    };
+    const { app, captured } = await makeAppWithStatusCapture(timbal);
+
+    await postJson(app, "/workforce/foo", {});
+
+    expect(captured.status).toBe(200);
+  });
+
+  test("set.status reflects upstream status for stream route", async () => {
+    const timbal = {
+      streamWorkforce: mock(
+        async () => new Response('{"error":"x"}', { status: 422 }),
+      ),
+    };
+    const { app, captured } = await makeAppWithStatusCapture(timbal);
+
+    await postJson(app, "/workforce/foo/stream", {});
+
+    expect(captured.status).toBe(422);
+  });
+});
+
+describe("upstream error body logging", () => {
+  let errSpy: ReturnType<typeof spyOn>;
+
+  beforeEach(() => {
+    errSpy = spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    errSpy.mockRestore();
+  });
+
+  test("logs upstream status and body on 4xx", async () => {
+    const upstreamBody = JSON.stringify({ error: "bad input" });
+    const timbal = {
+      callWorkforce: mock(
+        async () =>
+          new Response(upstreamBody, {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    };
+    const app = await makeApp(timbal);
+
+    await postJson(app, "/workforce/foo", {});
+
+    expect(errSpy).toHaveBeenCalled();
+    const logged = errSpy.mock.calls.flat().join(" ");
+    expect(logged).toContain("400");
+    expect(logged).toContain("bad input");
+    expect(logged).toContain("/workforce/foo");
+  });
+
+  test("logs upstream status and body on 5xx", async () => {
+    const timbal = {
+      callWorkforce: mock(
+        async () => new Response("kaboom", { status: 503 }),
+      ),
+    };
+    const app = await makeApp(timbal);
+
+    await postJson(app, "/workforce/foo", {});
+
+    expect(errSpy).toHaveBeenCalled();
+    const logged = errSpy.mock.calls.flat().join(" ");
+    expect(logged).toContain("503");
+    expect(logged).toContain("kaboom");
+  });
+
+  test("does not log on 200", async () => {
+    const timbal = {
+      callWorkforce: mock(
+        async () =>
+          new Response("{}", {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    };
+    const app = await makeApp(timbal);
+
+    await postJson(app, "/workforce/foo", {});
+
+    expect(errSpy).not.toHaveBeenCalled();
+  });
+
+  test("logs upstream error body for stream route", async () => {
+    const upstreamBody = JSON.stringify({ error: "stream failed" });
+    const timbal = {
+      streamWorkforce: mock(
+        async () =>
+          new Response(upstreamBody, {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    };
+    const app = await makeApp(timbal);
+
+    await postJson(app, "/workforce/foo/stream", {});
+
+    expect(errSpy).toHaveBeenCalled();
+    const logged = errSpy.mock.calls.flat().join(" ");
+    expect(logged).toContain("422");
+    expect(logged).toContain("stream failed");
+    expect(logged).toContain("/workforce/foo/stream");
   });
 });
 

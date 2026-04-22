@@ -14,13 +14,36 @@ const HOP_BY_HOP_HEADERS = new Set([
   "content-length",
 ]);
 
-function forwardResponse(upstream: Response): Response {
+function copyHeaders(upstream: Response): Headers {
   const headers = new Headers();
   upstream.headers.forEach((value, key) => {
     if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
       headers.set(key, value);
     }
   });
+  return headers;
+}
+
+async function forwardResponse(
+  upstream: Response,
+  set: { status?: number | string },
+  context: { method: string; path: string },
+): Promise<Response> {
+  set.status = upstream.status;
+  const headers = copyHeaders(upstream);
+
+  if (!upstream.ok) {
+    const text = await upstream.text();
+    console.error(
+      `[${context.method}] ${context.path} upstream ${upstream.status}: ${text}`,
+    );
+    return new Response(text, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers,
+    });
+  }
+
   return new Response(upstream.body, {
     status: upstream.status,
     statusText: upstream.statusText,
@@ -70,9 +93,12 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id",
-    async ({ params, body, timbal }: any) => {
+    async ({ params, body, timbal, set, request }: any) => {
       const upstream = await timbal.callWorkforce(params.id, body ?? {});
-      return forwardResponse(upstream);
+      return forwardResponse(upstream, set, {
+        method: request.method,
+        path: `/workforce/${params.id}`,
+      });
     },
     {
       params: t.Object({ id: t.String() }),
@@ -87,9 +113,12 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
   )
   .post(
     "/:id/stream",
-    async ({ params, body, timbal }: any) => {
+    async ({ params, body, timbal, set, request }: any) => {
       const upstream = await timbal.streamWorkforce(params.id, body ?? {});
-      return forwardResponse(upstream);
+      return forwardResponse(upstream, set, {
+        method: request.method,
+        path: `/workforce/${params.id}/stream`,
+      });
     },
     {
       params: t.Object({ id: t.String() }),
