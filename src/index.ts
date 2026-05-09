@@ -85,7 +85,10 @@ const app = new Elysia()
       console.error(`[${request.method}] ${new URL(request.url).pathname}`, error);
     }
     if (error instanceof TimbalApiError) {
-      set.status = error.statusCode >= 400 ? error.statusCode : 502;
+      // Pass through real HTTP statuses; map SDK-internal preconditions
+      // (timeout / network / missing auth → statusCode 0) to 502.
+      set.status =
+        error.isClientError() || error.isServerError() ? error.statusCode : 502;
       return { error: error.message };
     }
   })
