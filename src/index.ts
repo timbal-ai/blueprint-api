@@ -8,6 +8,7 @@ import { timbalAuth } from "@timbal-ai/timbal-sdk/elysia";
 import { healthcheckRoutes } from "./routes/healthcheck";
 import { sessionRoutes } from "./routes/session";
 import { workforceRoutes } from "./routes/workforce";
+import { fileRoutes } from "./routes/files";
 
 const DOCS_PAGE_PATH = join(import.meta.dir, "pages", "docs.html");
 
@@ -26,6 +27,7 @@ const coreApp = new Elysia()
           { name: "Health", description: "Health check endpoints" },
           { name: "Session", description: "Current user session" },
           { name: "Workforce", description: "Workforce component endpoints" },
+          { name: "Files", description: "File upload for chat attachments" },
         ],
         components: {
           securitySchemes: {
@@ -67,7 +69,8 @@ const coreApp = new Elysia()
   )
   .use(healthcheckRoutes)
   .use(sessionRoutes)
-  .use(workforceRoutes);
+  .use(workforceRoutes)
+  .use(fileRoutes);
 
 const app = new Elysia()
   .use(cors())
