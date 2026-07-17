@@ -4,7 +4,12 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import logixlysia from "logixlysia";
 import { TimbalApiError } from "@timbal-ai/timbal-sdk";
-import { timbalAuth } from "@timbal-ai/timbal-sdk/elysia";
+import {
+  CHANNELS_PUBLIC_PATHS,
+  timbalAuth,
+  timbalChannels,
+  timbalConfigRefresh,
+} from "@timbal-ai/timbal-sdk/elysia";
 import { healthcheckRoutes } from "./routes/healthcheck";
 import { sessionRoutes } from "./routes/session";
 import { workforceRoutes } from "./routes/workforce";
@@ -13,7 +18,9 @@ import { fileRoutes } from "./routes/files";
 const DOCS_PAGE_PATH = join(import.meta.dir, "pages", "docs.html");
 
 const coreApp = new Elysia()
-  .use(timbalAuth())
+  .use(timbalAuth({ publicPaths: [...CHANNELS_PUBLIC_PATHS] }))
+  .use(timbalChannels())
+  .use(timbalConfigRefresh())
   .use(
     swagger({
       path: "/api-spec",
