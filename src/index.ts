@@ -8,7 +8,7 @@ import {
   CHANNELS_PUBLIC_PATHS,
   timbalAuth,
   timbalChannels,
-  timbalConfigRefresh,
+  timbalMcp,
 } from "@timbal-ai/timbal-sdk/elysia";
 import { healthcheckRoutes } from "./routes/healthcheck";
 import { sessionRoutes } from "./routes/session";
@@ -20,7 +20,7 @@ const DOCS_PAGE_PATH = join(import.meta.dir, "pages", "docs.html");
 const coreApp = new Elysia()
   .use(timbalAuth({ publicPaths: [...CHANNELS_PUBLIC_PATHS] }))
   .use(timbalChannels())
-  .use(timbalConfigRefresh())
+  .use(timbalMcp())
   .use(
     swagger({
       path: "/api-spec",
