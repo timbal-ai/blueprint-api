@@ -170,6 +170,38 @@ export const workforceRoutes = new Elysia({ prefix: "/workforce" })
     },
   )
   .post(
+    "/:id/voice/session",
+    async ({ params, timbal, set, request }: any) => {
+      // A standalone framework server cannot mint platform caller tokens.
+      if (isLocalWorkforceEnvironment() && !process.env.TIMBAL_STUDIO) {
+        set.status = 503;
+        return { error: "Browser voice requires a deployed Agent or Studio preview; standalone local workforces cannot mint LiveKit sessions." };
+      }
+      // Keep the request-scoped client from timbalAuth; never mint with a
+      // separately constructed service client or forward arbitrary browser config.
+      // SDK 0.18's typed createSession throws plain Error on HTTP failures.
+      // The raw LiveKit handshake preserves platform status/body/session headers.
+      const upstream = await timbal.workforce.get(params.id).voice.rtc(
+        { transport: "livekit" },
+        { signal: AbortSignal.any([request.signal, AbortSignal.timeout(120_000)]) },
+      );
+      const response = await forwardResponse(upstream, set, {
+        method: request.method,
+        path: `/workforce/${params.id}/voice/session`,
+      });
+      response.headers.set("Cache-Control", "private, no-store");
+      return response;
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      detail: {
+        summary: "Create a native LiveKit voice session",
+        description: "Returns short-lived caller connection material for an Agent workforce. Inherits voice_config and request-scoped platform authorization.",
+        tags: ["Workforce"],
+      },
+    },
+  )
+  .post(
     "/:id/stream",
     async ({ params, body, timbal, token, set, request }: any) => {
       const enrichedBody = injectPlatformConfig(
