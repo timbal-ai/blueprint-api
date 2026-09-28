@@ -2,7 +2,7 @@ import { describe, test, expect, mock, afterEach } from "bun:test";
 import { Elysia } from "elysia";
 import { fileRoutes } from "./files";
 
-type App = Elysia;
+type App = Pick<Elysia, "server"> & { stop: () => Promise<unknown> };
 
 const openApps: App[] = [];
 
@@ -16,8 +16,8 @@ async function makeApp(timbal: unknown): Promise<App> {
 }
 
 function baseUrl(app: App): string {
-  const s = (app as any).server;
-  return `http://localhost:${s.port}`;
+  if (app.server?.port === undefined) throw new Error("Test server is not listening");
+  return `http://localhost:${app.server.port}`;
 }
 
 async function postUpload(app: App, file: File): Promise<Response> {
