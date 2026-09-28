@@ -11,7 +11,7 @@ import { Elysia } from "elysia";
 import { TimbalApiError } from "@timbal-ai/timbal-sdk";
 import { workforceRoutes } from "./workforce";
 
-type App = Elysia;
+type App = Pick<Elysia, "server"> & { stop: () => Promise<unknown> };
 
 const openApps: App[] = [];
 
@@ -25,8 +25,8 @@ async function makeApp(timbal: unknown): Promise<App> {
 }
 
 function baseUrl(app: App): string {
-  const s = (app as any).server;
-  return `http://localhost:${s.port}`;
+  if (app.server?.port === undefined) throw new Error("Test server is not listening");
+  return `http://localhost:${app.server.port}`;
 }
 
 async function get(app: App, path: string): Promise<Response> {
@@ -254,17 +254,20 @@ describe("POST /workforce/:id", () => {
 describe("set.status propagation (for external loggers like logixlysia)", () => {
   async function makeAppWithStatusCapture(
     timbal: unknown,
-  ): Promise<{ app: App; captured: { status?: number | string } }> {
+  ): Promise<{ app: App; captured: { status?: number | string }; completed: Promise<void> }> {
     const captured: { status?: number | string } = {};
+    let complete!: () => void;
+    const completed = new Promise<void>((resolve) => { complete = resolve; });
     const app = new Elysia()
       .decorate("timbal", timbal as any)
       .onAfterResponse({ as: "global" }, ({ set }: any) => {
         captured.status = set.status;
+        complete();
       })
       .use(workforceRoutes);
     await new Promise<void>((resolve) => app.listen(0, () => resolve()));
     openApps.push(app);
-    return { app, captured };
+    return { app, captured, completed };
   }
 
   test("set.status reflects upstream 400 (not the default 200)", async () => {
@@ -277,9 +280,10 @@ describe("set.status propagation (for external loggers like logixlysia)", () => 
           }),
       ),
     };
-    const { app, captured } = await makeAppWithStatusCapture(timbal);
+    const { app, captured, completed } = await makeAppWithStatusCapture(timbal);
 
-    await postJson(app, "/workforce/foo", {});
+    await (await postJson(app, "/workforce/foo", {})).text();
+    await completed;
 
     expect(captured.status).toBe(400);
   });
@@ -288,9 +292,10 @@ describe("set.status propagation (for external loggers like logixlysia)", () => 
     const timbal = {
       callWorkforce: mock(async () => new Response("boom", { status: 502 })),
     };
-    const { app, captured } = await makeAppWithStatusCapture(timbal);
+    const { app, captured, completed } = await makeAppWithStatusCapture(timbal);
 
-    await postJson(app, "/workforce/foo", {});
+    await (await postJson(app, "/workforce/foo", {})).text();
+    await completed;
 
     expect(captured.status).toBe(502);
   });
@@ -305,9 +310,10 @@ describe("set.status propagation (for external loggers like logixlysia)", () => 
           }),
       ),
     };
-    const { app, captured } = await makeAppWithStatusCapture(timbal);
+    const { app, captured, completed } = await makeAppWithStatusCapture(timbal);
 
-    await postJson(app, "/workforce/foo", {});
+    await (await postJson(app, "/workforce/foo", {})).text();
+    await completed;
 
     expect(captured.status).toBe(200);
   });
@@ -318,9 +324,10 @@ describe("set.status propagation (for external loggers like logixlysia)", () => 
         async () => new Response('{"error":"x"}', { status: 422 }),
       ),
     };
-    const { app, captured } = await makeAppWithStatusCapture(timbal);
+    const { app, captured, completed } = await makeAppWithStatusCapture(timbal);
 
-    await postJson(app, "/workforce/foo/stream", {});
+    await (await postJson(app, "/workforce/foo/stream", {})).text();
+    await completed;
 
     expect(captured.status).toBe(422);
   });
