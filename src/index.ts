@@ -104,7 +104,10 @@ const app = new Elysia()
   })
   .use(coreApp)
   .group("/api", (app) => app.use(coreApp))
-  .listen(Number(process.env.PORT) || 3000);
+  // Bun drops a connection after `idleTimeout` seconds with no bytes sent, and
+  // Elysia's default is 30: a slower route (a long tool call, an LLM-backed
+  // handler) gets an empty reply. 255 is Bun's maximum.
+  .listen({ port: Number(process.env.PORT) || 3000, idleTimeout: 255 });
 
 console.log(
   `Timbal API is running at http://${app.server?.hostname}:${app.server?.port}`,
